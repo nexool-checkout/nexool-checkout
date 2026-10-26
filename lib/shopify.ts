@@ -70,9 +70,14 @@ export async function completeDraft(s:Session){
  const data=await gql(`mutation Complete($id:ID!){draftOrderComplete(id:$id){draftOrder{order{id name statusPageUrl}} userErrors{message}}}`,{id:s.draft_id});errors(data.draftOrderComplete);
  const order=data.draftOrderComplete.draftOrder?.order;if(!order)throw new Error('Order completion is still pending');return order;
 }
-export async function healthShopify(){return gql(`query Setup{shop{name myshopifyDomain} currentAppInstallation{accessScopes{handle}}}`);}
+export async function healthShopify(){cached=undefined;return gql(`query Setup{shop{name myshopifyDomain} currentAppInstallation{accessScopes{handle}}}`);}
+export function hasTrackingWebhookScope(scopes:readonly string[]){return scopes.some(scope=>['read_fulfillments','write_fulfillments','read_marketplace_orders','write_marketplace_orders'].includes(scope));}
 export async function fulfillments(orderId:string){const data=await gql(`query Tracking($id:ID!){order(id:$id){fulfillments{status trackingInfo{number url company}}}}`,{id:orderId});return data.order?.fulfillments||[];}
-export async function registerTrackingWebhooks(){return registerWebhooks(['FULFILLMENTS_CREATE','FULFILLMENTS_UPDATE']);}
+export async function registerTrackingWebhooks(){
+ const installation=await healthShopify();
+ if(!hasTrackingWebhookScope(installation.currentAppInstallation?.accessScopes?.map((scope:{handle:string})=>scope.handle)||[]))throw new Error('Add read_fulfillments to your Shopify app, release the version and approve the new permission on the store. Then register tracking webhooks again.');
+ return registerWebhooks(['FULFILLMENTS_CREATE','FULFILLMENTS_UPDATE']);
+}
 export async function registerProductWebhooks(){return registerWebhooks(['PRODUCTS_CREATE','PRODUCTS_UPDATE','PRODUCTS_DELETE']);}
 async function registerWebhooks(topics:string[]){
  const uri=appUrl()+'/api/webhooks/shopify';

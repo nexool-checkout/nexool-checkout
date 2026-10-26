@@ -1,5 +1,5 @@
 SECURE CHECKOUT — VERCEL SETUP
-Updated 26 October 2026 — version 0.3.0
+Updated 26 October 2026 — version 0.3.1
 Read ONE-PAGE-UPDATE.txt for the single-page flow and optional address autocomplete.
 Read PRODUCT-SYNC-UPDATE.txt for the optional product-sync switch in /setup.
 
@@ -54,7 +54,13 @@ and store owned by the same Shopify organization. This pilot uses the
 client-credentials grant, not the OAuth install flow needed for other merchants.
 
 Grant these Admin API scopes:
-  read_products,read_inventory,read_markets,write_orders,write_draft_orders
+  read_products,read_inventory,read_markets,write_orders,write_draft_orders,read_fulfillments
+
+read_fulfillments is needed to subscribe to fulfillments/create and
+fulfillments/update for automatic tracking. read_orders can read an order's
+tracking details but does not by itself authorize these webhook subscriptions.
+Release a new app version and approve this added permission on the store.
+Test connections refreshes the Shopify token and reports this permission check.
 
 write_draft_orders is essential: the application asks Shopify to calculate
 shipping, discounts and taxes, reserves a draft, then completes that same

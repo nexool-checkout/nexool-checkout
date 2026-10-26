@@ -6,7 +6,7 @@ import {db,initialize,limit} from '@/lib/db';
 import {required,requiredNames,paymentReady,appUrl,enabledCurrencies} from '@/lib/config';
 import {adminCookie,body,equal,fail,hash,isAdmin,requireAdmin,requireFresh,sameOrigin,sessionFor,tokenFrom} from '@/lib/security';
 import {addressSchema,cartSchema,mergeItems,sameMoney,preparationSchema,assertReviewedOrder,type Session} from '@/lib/model';
-import {getCart,calculate,createDraft,healthShopify,registerTrackingWebhooks} from '@/lib/shopify';
+import {getCart,calculate,createDraft,healthShopify,registerTrackingWebhooks,hasTrackingWebhookScope} from '@/lib/shopify';
 import {createPayment,paymentQuote,whop} from '@/lib/whop';
 import {reconcile,syncPayment,syncTracking} from '@/lib/sync';
 import {placeProof,resolvePlace,suggestPlaces} from '@/lib/places';
@@ -34,7 +34,7 @@ export async function GET(req:Request,context:Context){
    let sessions:any[]=[],tracking:any[]=[],database=false;
    try{sessions=await db()`SELECT id,status,currency,payment_id,order_id,last_error,created_at FROM nexool_sessions ORDER BY created_at DESC LIMIT 30`;tracking=await db()`SELECT * FROM nexool_tracking WHERE error IS NOT NULL LIMIT 20`;database=true;}catch{}
    let productSync=null;try{productSync=await productSyncState();}catch{}
-   return json({authenticated:true,settings,database,autocomplete:!!process.env.GOOGLE_PLACES_API_KEY,enabled:paymentReady(),currencies:enabledCurrencies(),sessions,tracking,productSync,release:'0.3.0'});
+   return json({authenticated:true,settings,database,autocomplete:!!process.env.GOOGLE_PLACES_API_KEY,enabled:paymentReady(),currencies:enabledCurrencies(),sessions,tracking,trackingEnabled:process.env.TRACKING_SYNC_ENABLED==='true',productSync,release:'0.3.1'});
   }
   if(route==='reconcile'){
    if(!equal(req.headers.get('authorization')||'',`Bearer ${required('CRON_SECRET')}`))return json({error:'Unauthorized'},401);
@@ -91,7 +91,7 @@ export async function POST(req:Request,context:Context){
    if(route==='admin/product-sync/retry')return json(await retryProductSync());
    if(route==='admin/check'){
     const checks:Record<string,unknown>={};
-    try{checks.shopify=await healthShopify();}catch(e){checks.shopify={error:e instanceof Error?e.message:'Connection failed'};}
+    try{const shopify=await healthShopify();checks.shopify=shopify;checks.tracking={enabled:process.env.TRACKING_SYNC_ENABLED==='true',shopifyWebhookScope:hasTrackingWebhookScope(shopify.currentAppInstallation?.accessScopes?.map((scope:{handle:string})=>scope.handle)||[])?'ready':'missing read_fulfillments',whopShipmentPermissions:'Not tested by the account connection check; verify shipment create/update access on the Whop API key'};}catch(e){checks.shopify={error:e instanceof Error?e.message:'Connection failed'};}
     try{const account=await whop().accounts.retrieve({id:required('WHOP_BUSINESS_ID')});checks.whop={ok:true,id:account.id};}catch{checks.whop={error:'Check Whop key, account ID and account read permission'};}
     try{await db()`SELECT 1`;checks.database={ok:true};}catch{checks.database={error:'Check DATABASE_URL'};}
     return json(checks);

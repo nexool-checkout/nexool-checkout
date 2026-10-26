@@ -5,7 +5,7 @@ import {unwrapWebhook} from '@whop/sdk/helpers';
 import {cartSchema,moneyMinor,sameMoney,mergeItems,type Session} from '../lib/model';
 import {validatePayment} from '../lib/whop';
 import {sameOrigin,equal,hash} from '../lib/security';
-import {draftInput,getCart,completeDraft} from '../lib/shopify';
+import {draftInput,getCart,completeDraft,hasTrackingWebhookScope,registerTrackingWebhooks} from '../lib/shopify';
 import type {Whop} from '@whop/sdk';
 process.env.APP_URL='https://checkout.nexool.shop';
 process.env.WHOP_BUSINESS_ID='biz_test';
@@ -31,5 +31,26 @@ test('catalogue rejects unavailable inventory and disabled markets',async(t)=>{
 test('already-completed draft is reused instead of creating a duplicate order',async(t)=>{
  let mutations=0;t.mock.method(globalThis,'fetch',async(_url:any,options:any)=>{if(String(_url).includes('oauth'))return Response.json({access_token:'test',expires_in:86400});const {query}=JSON.parse(options.body);if(query.includes('mutation'))mutations++;return Response.json({data:{draftOrder:{order:{id:'gid://shopify/Order/123',statusPageUrl:'https://test.myshopify.com/orders/example'}}}});});
  const order=await completeDraft({...s,draft_id:'gid://shopify/DraftOrder/1'});assert.equal(order.id,'gid://shopify/Order/123');assert.equal(mutations,0);
+});
+
+test('order read scopes do not incorrectly pass the automatic tracking webhook check',()=>{
+ assert.equal(hasTrackingWebhookScope(['read_orders','write_orders','read_draft_orders']),false);
+ assert.equal(hasTrackingWebhookScope(['read_fulfillments']),true);
+ assert.equal(hasTrackingWebhookScope(['read_marketplace_orders']),true);
+ assert.equal(hasTrackingWebhookScope(['write_fulfillments']),true);
+});
+test('tracking registration refreshes permission grants, refuses missing access and reuses existing hooks',async t=>{
+ let allowed=false,oauthCalls=0,mutations=0;const hooks:{id:string;topic:string;uri:string}[]=[];
+ t.mock.method(globalThis,'fetch',async(url:any,options:any)=>{
+  if(String(url).includes('oauth')){oauthCalls++;return Response.json({access_token:'test',expires_in:86400});}
+  const {query,variables}=JSON.parse(options.body);
+  if(query.includes('query Setup'))return Response.json({data:{currentAppInstallation:{accessScopes:[{handle:allowed?'read_fulfillments':'read_orders'}]}}});
+  if(query.includes('query Hooks'))return Response.json({data:{webhookSubscriptions:{nodes:hooks}}});
+  mutations++;const hook={id:`gid://shopify/WebhookSubscription/${mutations}`,topic:variables.topic,uri:variables.input.uri};hooks.push(hook);
+  return Response.json({data:{webhookSubscriptionCreate:{webhookSubscription:hook,userErrors:[]}}});
+ });
+ await assert.rejects(()=>registerTrackingWebhooks(),/read_fulfillments/);assert.equal(mutations,0);
+ allowed=true;const first=await registerTrackingWebhooks();assert.equal(first.subscriptions.length,2);assert.equal(mutations,2);assert.equal(oauthCalls,2);
+ await registerTrackingWebhooks();assert.equal(mutations,2);assert.equal(oauthCalls,3);
 });
 
