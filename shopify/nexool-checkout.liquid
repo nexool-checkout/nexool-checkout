@@ -1,0 +1,46 @@
+{% comment %}
+Install as snippets/nexool-checkout.liquid, then render before </body> in layout/theme.liquid.
+Keep enabled false until the full test order passes. Edit the checkout URL for preview testing.
+This intercepts standard Shopify cart checkout submits, including the Tidal cart page.
+It deliberately rejects subscriptions, gift cards and custom line-item properties.
+Dynamic buy buttons / third-party cart drawers need separate integration testing.
+{% endcomment %}
+<script>
+(() => {
+  const enabled = false; // Change to true only after the live test checklist passes.
+  const checkoutUrl = 'https://checkout.nexool.shop';
+  const country = {{ localization.country.iso_code | json }};
+  if (!enabled) return;
+  let busy = false;
+  document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !event.submitter?.matches('[name="checkout"]')) return;
+    const action = new URL(form.action, location.origin);
+    if (!action.pathname.endsWith('/cart')) return;
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    const button = event.submitter; button.disabled = true;
+    const root = window.Shopify?.routes?.root || '/';
+    try {
+      // Persist quantity edits and notes before reading the handoff cart.
+      const update = new FormData(form); update.delete('checkout');
+      const updateResponse = await fetch(root + 'cart/update.js', {method:'POST',body:update,headers:{Accept:'application/json'}});
+      if (!updateResponse.ok) throw new Error('Please update your cart and try again.');
+      const cart = await updateResponse.json();
+      if (!cart.items.length) throw new Error('Your cart is empty.');
+      if (cart.note || Object.keys(cart.attributes || {}).length) throw new Error('Orders with special instructions need the regular Shopify checkout.');
+      if (cart.items.some(item => item.selling_plan_allocation || item.gift_card || Object.keys(item.properties || {}).length)) throw new Error('This cart includes an option that needs the standard store checkout. Please contact the store.');
+      const payload = {country,currency:cart.currency,items:cart.items.map(item => ({variantId:String(item.variant_id),quantity:item.quantity}))};
+      // Only product IDs, quantities and country travel in the fragment. No customer data or prices.
+      location.assign(checkoutUrl + '/#cart=' + encodeURIComponent(JSON.stringify(payload)));
+    } catch (error) {
+      let feedback = document.getElementById('NexoolCheckoutError');
+      if (!feedback) { feedback = document.createElement('p'); feedback.id='NexoolCheckoutError'; feedback.setAttribute('role','alert'); button.insertAdjacentElement('afterend',feedback); }
+      feedback.textContent = error.message || 'Unable to open checkout. Please try again.';
+      const fallback = document.createElement('a'); fallback.href=root+'checkout'; fallback.textContent=' Continue with Shopify checkout →'; feedback.appendChild(fallback);
+      button.disabled = false; busy = false;
+    }
+  }, true);
+})();
+</script>
