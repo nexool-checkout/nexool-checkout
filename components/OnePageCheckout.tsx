@@ -1,7 +1,8 @@
 'use client';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import dynamic from 'next/dynamic';
-import type {Address} from '@/lib/model';
+import type {Address,Item} from '@/lib/model';
+import type {ExpressLocation} from '@/lib/express';
 import {addressSchema,formatMoney} from '@/lib/model';
 import {addressRows,addressRules} from '@/lib/address-rules';
 import countries from '@/lib/countries.json';
@@ -18,6 +19,7 @@ export default function OnePageCheckout({storefront,supportEmail,enabled,preview
  const [address,setAddress]=useState<Address>(initialAddress),[discount,setDiscount]=useState(''),[appliedDiscount,setAppliedDiscount]=useState(''),[shippingHandle,setShippingHandle]=useState('');
  const [quoteKey,setQuoteKey]=useState(''),[failedKey,setFailedKey]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[paying,setPaying]=useState(false),[committed,setCommitted]=useState(false),[loading,setLoading]=useState(!preview);
  const [showApartment,setShowApartment]=useState(false),[summaryOpen,setSummaryOpen]=useState(false);
+ const [marketBusy,setMarketBusy]=useState(false);const marketRequest=useRef(0),selectedCountry=useRef(address.countryCode);selectedCountry.current=address.countryCode;
  const mounted=useRef(false),requestActive=useRef(false),keyRef=useRef('');
  const key=fingerprint(address,appliedDiscount,shippingHandle);keyRef.current=key;
  const locked=committed||!!session&&['ready','preparing','paying','payment_pending','payment_unknown','complete','syncing','needs_review','needs_configuration'].includes(session.status);
@@ -45,7 +47,7 @@ export default function OnePageCheckout({storefront,supportEmail,enabled,preview
   return()=>{active=false;mounted.current=false;};
  },[preview]);
  const calculate=useCallback(async()=>{
-  if(requestActive.current||locked||paying||!session||!addressSchema.safeParse(address).success)return;
+  if(requestActive.current||locked||paying||marketBusy||!session||!addressSchema.safeParse(address).success)return;
   const requestedKey=key;requestActive.current=true;setBusy(true);setError('');
   try{
    const result:CheckoutSession=preview?{...demo,address,quote:{currency:'USD',subtotal:'39.00',shipping:shippingHandle==='demo-express'?'9.95':'4.95',tax:'0.00',discount:'0.00',total:shippingHandle==='demo-express'?'48.95':'43.95',taxesIncluded:false,rates:[{handle:'demo-standard',title:'Standard delivery · example',price:{amount:'4.95',currencyCode:'USD'}},{handle:'demo-express',title:'Express delivery · example',price:{amount:'9.95',currencyCode:'USD'}}],shippingHandle:shippingHandle||'demo-standard',warnings:[],discountCode:appliedDiscount},status:'quoted'}:await api('quote',{address,discountCode:appliedDiscount,shippingHandle});
@@ -53,14 +55,25 @@ export default function OnePageCheckout({storefront,supportEmail,enabled,preview
    const handle=result.quote!.shippingHandle;setSession(result);setShippingHandle(handle);setQuoteKey(fingerprint(address,appliedDiscount,handle));setFailedKey('');
   }catch(e){if(mounted.current&&keyRef.current===requestedKey){setError(e instanceof Error?e.message:'Unable to calculate your order');setFailedKey(requestedKey);}}
   finally{requestActive.current=false;if(mounted.current)setBusy(false);}
- },[address,appliedDiscount,shippingHandle,key,locked,paying,session,preview,api]);
+ },[address,appliedDiscount,shippingHandle,key,locked,paying,marketBusy,session,preview,api]);
  useEffect(()=>{
-  if(loading||busy||locked||paying||currentQuote||failedKey===key||!session||!addressSchema.safeParse(address).success)return;
+  if(loading||busy||marketBusy||locked||paying||currentQuote||failedKey===key||!session||!addressSchema.safeParse(address).success)return;
   const timer=setTimeout(()=>calculate(),700);return()=>clearTimeout(timer);
- },[address,key,failedKey,session,loading,busy,locked,paying,currentQuote,calculate]);
+ },[address,key,failedKey,session,loading,busy,marketBusy,locked,paying,currentQuote,calculate]);
  function change(field:keyof Address,value:string){if(locked||paying)return;setError('');setAddress(a=>({...a,[field]:value}));}
- function countryChange(value:string){if(locked||paying)return;setError('');setShippingHandle('');setAddress(a=>({...a,countryCode:value,provinceCode:'',zip:'',city:''}));}
+ function countryChange(value:string){
+  if(locked||paying)return;setError('');setQuoteKey('');setFailedKey('');setShippingHandle('');selectedCountry.current=value;setAddress(a=>({...a,countryCode:value,provinceCode:'',zip:'',city:''}));
+  if(preview)return;const sequence=++marketRequest.current;setMarketBusy(true);
+  api('market',{country:value}).then(result=>{if(mounted.current&&sequence===marketRequest.current&&selectedCountry.current===value)setSession(s=>s?{...s,...result,quote:null}:s);}).catch(e=>{if(mounted.current&&sequence===marketRequest.current)setError(e instanceof Error?e.message:'Unable to load this market.');}).finally(()=>{if(mounted.current&&sequence===marketRequest.current)setMarketBusy(false);});
+ }
  function chooseAddress(values:Partial<Address>){if(locked||paying)return;setError('');setShippingHandle('');setShowApartment(Boolean(values.address2));setAddress(a=>({...a,...values,address2:values.address2||a.address2}));}
+ function acceptWalletQuote(result:CheckoutSession){
+  if(!result.address||!result.quote)return;const code=result.quote.discountCode||'',handle=result.quote.shippingHandle;
+  marketRequest.current++;selectedCountry.current=result.country;setMarketBusy(false);setSession(result);setAddress(result.address);setShowApartment(!!result.address.address2);setAppliedDiscount(code);setDiscount(code);setShippingHandle(handle);setQuoteKey(fingerprint(result.address,code,handle));setFailedKey('');setError('');
+ }
+ function acceptWalletMarket(market:{cart:Item[];country:string;currency:string},location:ExpressLocation){
+  marketRequest.current++;selectedCountry.current=market.country;setMarketBusy(false);setSession(s=>s?{...s,...market,quote:null}:s);setQuoteKey('');setShippingHandle('');setAddress(a=>({...a,countryCode:market.country,city:location.city,provinceCode:location.provinceCode,zip:location.zip,address1:location.address1||'',address2:location.address2||''}));
+ }
  const q=currentQuote?session?.quote:null,currency=q?.currency||session?.currency||'USD',total=q?.total||String(session?.cart.reduce((sum,i)=>sum+Number(i.price.amount)*i.quantity,0)||0);
  const disabled=locked||paying;
  const itemCount=session?.cart.reduce((n,i)=>n+i.quantity,0)||0;
@@ -80,6 +93,7 @@ export default function OnePageCheckout({storefront,supportEmail,enabled,preview
    <div className="checkout-title"><h1>Checkout</h1><span><Lock/> Safe & secure</span></div>
    {error&&<div className="error" role="alert">{error}{!session&&<a className="quiet-link" href={`${storefront}/checkout`}>Use the store checkout →</a>}</div>}
    {loading?<div className="empty"><span className="spinner"/> Getting your bag ready…</div>:!session?<div className="empty"><h2>{enabled?'Your bag is waiting.':'Checkout is being prepared.'}</h2><p>Add products to your bag in the store, then continue here to checkout.</p><a className="button" href={storefront}>Return to store →</a><a className="quiet-link" href="/preview">Preview checkout design</a></div>:<>
+    <div id="express-checkout"/>
     <form onSubmit={e=>{e.preventDefault();setFailedKey('');calculate();}} aria-label="Delivery details"><fieldset disabled={disabled}>
      <section className="form-section"><div className="section-title"><h2>Contact</h2><span>For your receipt and order updates</span></div><label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254} value={address.email} onChange={e=>change('email',e.target.value)} placeholder="you@example.com"/></label></section>
      <section className="form-section"><div className="section-title"><h2>Delivery</h2></div><label>Country / region<select name="country" autoComplete="shipping country" value={address.countryCode} onChange={e=>countryChange(e.target.value)}>{countries.map(c=><option key={c.code} value={c.code}>{c.name}</option>)}</select></label>
@@ -92,7 +106,7 @@ export default function OnePageCheckout({storefront,supportEmail,enabled,preview
      </section>
     </form>
     <section className="form-section payment-section" aria-labelledby="payment-heading"><div className="section-title"><h2 id="payment-heading">Payment</h2><Lock/></div>
-     {q&&!preview&&!busy?<Payment key={quoteKey} token={token} session={session} onBusy={setPaying} onCommit={()=>setCommitted(true)}/>:<div className="payment-waiting"><div className="payment-waiting-title"><span className="card-outline" aria-hidden="true">▰</span><strong>{preview?'Secure payment · preview':'Secure payment'}</strong><Lock/></div><p>{preview?'Your available cards and wallets will appear here after Whop is connected.':'Your available cards and wallets will appear here once your delivery total is confirmed.'}</p><div className="payment-placeholder" aria-hidden="true"><span>Card details</span><Lock/></div><div className="payment-placeholder-row" aria-hidden="true"><span>Expiration date</span><span>Security code</span></div><button type="button" className="button full" disabled>{preview?'Preview only — no payment':'Complete delivery details above'}<Lock/></button></div>}
+     {!preview?<Payment token={token} session={session} address={address} quoteReady={enabled&&currentQuote} updating={busy||marketBusy||!enabled} discountCode={appliedDiscount} shippingHandle={shippingHandle} onBusy={setPaying} onCommit={()=>setCommitted(true)} onQuoted={acceptWalletQuote} onMarket={acceptWalletMarket}/>:<div className="payment-waiting"><div className="payment-waiting-title"><span className="card-outline" aria-hidden="true">▰</span><strong>{preview?'Secure payment · preview':'Secure payment'}</strong><Lock/></div><p>{preview?'Your available cards and wallets will appear here after Whop is connected.':'Your available cards and wallets will appear here once your delivery total is confirmed.'}</p><div className="payment-placeholder" aria-hidden="true"><span>Card details</span><Lock/></div><div className="payment-placeholder-row" aria-hidden="true"><span>Expiration date</span><span>Security code</span></div><button type="button" className="button full" disabled>{preview?'Preview only — no payment':'Complete delivery details above'}<Lock/></button></div>}
      <p className="order-consent">By placing your order, you agree to our <a href={`${storefront}/policies/terms-of-service`}>terms</a> and <a href={`${storefront}/policies/privacy-policy`}>privacy policy</a>.</p>
     </section>
    </>}

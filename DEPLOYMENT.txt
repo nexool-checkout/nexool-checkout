@@ -1,7 +1,8 @@
 SECURE CHECKOUT — VERCEL SETUP
-Updated 26 October 2026 — version 0.3.1
+Updated 26 October 2026 — version 0.4.0
 Read ONE-PAGE-UPDATE.txt for the single-page flow and optional address autocomplete.
 Read PRODUCT-SYNC-UPDATE.txt for the optional product-sync switch in /setup.
+Read EXPRESS-CHECKOUT-UPDATE.txt for early payment loading and express wallets.
 
 YOUR PROJECT
 Store: https://nexool.shop

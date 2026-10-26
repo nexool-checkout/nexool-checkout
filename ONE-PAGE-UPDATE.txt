@@ -101,3 +101,7 @@ The next theme work is the add-to-cart drawer shown in the video: it slides
 in after Add to cart and contains quantities, discounts and a checkout button.
 That theme change is intentionally deferred as requested. This ZIP updates
 the checkout application; the existing Shopify cart bridge is still included.
+VERSION 0.4.0 UPDATE
+Real payment fields now load before delivery details are complete and remain
+mounted during total updates. Eligible express wallets appear above Contact.
+Read EXPRESS-CHECKOUT-UPDATE.txt for the current payment flow and verification.

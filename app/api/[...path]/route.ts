@@ -12,6 +12,7 @@ import {reconcile,syncPayment,syncTracking} from '@/lib/sync';
 import {placeProof,resolvePlace,suggestPlaces} from '@/lib/places';
 import {verifyWhopWebhook,WhopWebhookError} from '@/lib/whop-webhook';
 import {productSyncState,setProductSync,startProductImport,runProductSync,retryProductSync,enqueueProduct,productSyncEnabled} from '@/lib/product-sync';
+import {expressLocationSchema} from '@/lib/express';
 export const runtime='nodejs';
 export const maxDuration=60;
 type Context={params:Promise<{path:string[]}>};
@@ -34,7 +35,7 @@ export async function GET(req:Request,context:Context){
    let sessions:any[]=[],tracking:any[]=[],database=false;
    try{sessions=await db()`SELECT id,status,currency,payment_id,order_id,last_error,created_at FROM nexool_sessions ORDER BY created_at DESC LIMIT 30`;tracking=await db()`SELECT * FROM nexool_tracking WHERE error IS NOT NULL LIMIT 20`;database=true;}catch{}
    let productSync=null;try{productSync=await productSyncState();}catch{}
-   return json({authenticated:true,settings,database,autocomplete:!!process.env.GOOGLE_PLACES_API_KEY,enabled:paymentReady(),currencies:enabledCurrencies(),sessions,tracking,trackingEnabled:process.env.TRACKING_SYNC_ENABLED==='true',productSync,release:'0.3.1'});
+   return json({authenticated:true,settings,database,autocomplete:!!process.env.GOOGLE_PLACES_API_KEY,enabled:paymentReady(),currencies:enabledCurrencies(),sessions,tracking,trackingEnabled:process.env.TRACKING_SYNC_ENABLED==='true',productSync,release:'0.4.0'});
   }
   if(route==='reconcile'){
    if(!equal(req.headers.get('authorization')||'',`Bearer ${required('CRON_SECRET')}`))return json({error:'Unauthorized'},401);
@@ -121,12 +122,26 @@ export async function POST(req:Request,context:Context){
    return json(await resolvePlace(data.id,data.country,data.sessionToken));
   }
   await limit(`mutate:${s.id}`,15);
+  if(route==='market'||route==='express/quote'){
+   if(s.draft_id||s.payment_attempt_key)throw new Error('This order is already reserved. Start a new checkout to change delivery.');
+   const signal=AbortSignal.any([req.signal,AbortSignal.timeout(18000)]);
+   if(route==='market'){
+    const data=z.object({country:z.string().regex(/^[A-Z]{2}$/)}).strict().parse(await body(req));
+    const cart=await getCart({items:s.items,country:data.country},signal);return json({cart,country:data.country,currency:cart[0].price.currencyCode});
+   }
+   const data=z.object({location:expressLocationSchema,discountCode:z.string().trim().max(80).default(''),shippingHandle:z.string().max(2000).default('')}).strict().parse(await body(req));
+   const cart=await getCart({items:s.items,country:data.location.countryCode},signal);const quote=await calculate(cart,data.location,data.discountCode,data.shippingHandle,signal);quote.discountCode=data.discountCode;
+   // Wallet change events provide a redacted address. This estimate creates no draft
+   // or payment and cannot authorize a charge; a full /quote is required at approval.
+   return json({cart,country:data.location.countryCode,currency:quote.currency,quote});
+  }
   if(route==='quote'){
    if(s.draft_id||s.payment_attempt_key)throw new Error('This order is already reserved. Return to the store to start a different order.');
-   const data=z.object({address:addressSchema,discountCode:z.string().trim().max(80).default(''),shippingHandle:z.string().max(2000).default('')}).strict().parse(await body(req));
+   const data=z.object({address:addressSchema,discountCode:z.string().trim().max(80).default(''),shippingHandle:z.string().max(2000).default(''),express:z.boolean().default(false)}).strict().parse(await body(req));
    const [claimed]=await db()`UPDATE nexool_sessions SET status='quoting',updated_at=NOW() WHERE id=${s.id} AND status IN ('cart','quoted') RETURNING id`;if(!claimed)throw new Error('An update is already in progress. Please wait.');
    try{
-    const cart=await getCart({items:s.items,country:data.address.countryCode});const quote=await calculate(cart,data.address,data.discountCode,data.shippingHandle);quote.discountCode=data.discountCode;
+    const signal=data.express?AbortSignal.any([req.signal,AbortSignal.timeout(18000)]):req.signal;
+    const cart=await getCart({items:s.items,country:data.address.countryCode},signal);const quote=await calculate(cart,data.address,data.discountCode,data.shippingHandle,signal);quote.discountCode=data.discountCode;
     const [updated]=await db()`UPDATE nexool_sessions SET cart=${db().json(cart)},address=${db().json(data.address)},quote=${db().json(quote)},country=${data.address.countryCode},currency=${quote.currency},status='quoted',updated_at=NOW() WHERE id=${s.id} RETURNING *`;
     return json(publicSession(updated as Session));
    }catch(e){await db()`UPDATE nexool_sessions SET status='cart',updated_at=NOW() WHERE id=${s.id}`;throw e;}

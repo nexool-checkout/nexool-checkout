@@ -1,0 +1,45 @@
+SECURE CHECKOUT 0.4.0 - EARLY CARD FIELDS AND EXPRESS WALLETS
+
+Deploy this update to the existing Vercel project. Existing environment values,
+Neon data, product-sync settings and Shopify theme connection remain in use.
+There are no new environment variables or database migrations.
+
+The real Whop payment form now loads as soon as the cart is available, before
+the buyer completes delivery. It remains mounted while address, shipping and
+total changes update its amount/currency. Card details stay in Whop's payment
+fields; the merchant application never reads or stores them.
+
+Eligible Apple Pay and Google Pay buttons appear above Contact. Availability
+comes from Whop's real account/device/domain probe, including its supplied
+button artwork. Unsupported methods are hidden. No simulated availability is
+used in production. The domain must remain verified in Whop Websites.
+
+The wallet collects contact and shipping details. Its redacted address-change
+events request an estimate from Shopify without inventing names, an email,
+street details or postal suffixes. These estimates create no order and cannot
+authorize payment. Changing the delivery country also refreshes Shopify's
+market price/currency without waiting for the complete manual address.
+
+Before approving a wallet token, the app validates the full contact/address,
+gets a full Shopify quote and compares the wallet-approved amount, currency
+and shipping option. It then reserves the order and rechecks the Shopify and
+Whop quote before submitting the token. Existing signatures, payment ownership,
+tax/amount matching and payment idempotency remain enforced.
+
+If the full address changes the total, or the buyer selects a country with a
+different market currency, the app refuses that authorization and asks the buyer
+to close the wallet, review the updated checkout and retry. This avoids charging
+a total or currency the buyer did not approve. If a carrier cannot quote from a
+wallet-redacted address, the buyer can complete delivery on the page first.
+
+LOCAL VERIFICATION
+39 unit checks, 10 browser flows with a mocked Whop provider, and 7 API/database
+checks passed. Browser checks cover early form mounting, field persistence,
+normal card submission, successful wallet flow, cancellation, changed totals,
+changed currencies, changed prepared totals and unavailable wallets.
+No real card was entered and no real wallet charge was made in these tests.
+Verify actual Apple Pay/Google Pay on an eligible buyer device after deployment.
+
+REFERENCE
+https://docs.whop.com/elements/latest/payments/overview
+https://docs.whop.com/elements/latest/payments/payment
