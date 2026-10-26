@@ -1,0 +1,5 @@
+Country formats, labels, province names/codes adapted from Shopify/worldwide.
+Source: https://github.com/Shopify/worldwide
+Retrieved 2026-10-25; main commit observed: cc2b7e6ae3a588d33a691cd59f3711280ccd1e75
+Only address structure is included; prices, taxes and currency remain server-authoritative from Shopify.
+See Shopify-worldwide.txt for MIT and Unicode notices.
