@@ -1,6 +1,7 @@
 SECURE CHECKOUT — VERCEL SETUP
-Updated 25 October 2026 — version 0.2.1
+Updated 26 October 2026 — version 0.3.0
 Read ONE-PAGE-UPDATE.txt for the single-page flow and optional address autocomplete.
+Read PRODUCT-SYNC-UPDATE.txt for the optional product-sync switch in /setup.
 
 YOUR PROJECT
 Store: https://nexool.shop
@@ -79,9 +80,11 @@ Whop:
   used here: account read, payment quotes, payments create/read, and inline
   one-time plan creation. For tracking, also allow shipments create/update.
   Dashboard permission labels can vary; use the corresponding capabilities.
-- This version uses one Whop product for the whole cart. Shopify preserves
-  each original variant and quantity. WHOP_RECEIPT_TITLE changes the cart's
-  Whop plan title; individual Shopify-to-Whop product mapping is not included.
+- Product sync defaults to Off: checkout uses the configured Whop product and
+  WHOP_RECEIPT_TITLE. Turn it On in /setup and import the active Shopify catalog
+  to create persistent product mappings. A single-product cart uses its mapped
+  Whop product once ready; mixed carts retain one whole-cart payment with item
+  names in its description. Shopify preserves every original variant/quantity.
 - Verify buyer-added fees are disabled and tax treatment matches Shopify.
   The application compares Whop's quoted total, currency AND tax against
   Shopify and refuses payment if they differ. Do not remove this check to

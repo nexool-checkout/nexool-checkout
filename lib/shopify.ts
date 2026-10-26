@@ -17,7 +17,7 @@ export async function gql<T=any>(query:string,variables:Record<string,unknown>={
 function errors(payload:any){if(payload.userErrors?.length)throw new Error(payload.userErrors.map((e:any)=>e.message).join('; '));}
 export async function getCart(input:CartInput):Promise<Item[]>{
  const items=mergeItems(input.items);
- const data=await gql(`query Cart($ids:[ID!]!,$country:CountryCode!){marketByGeography(countryCode:$country){id status} nodes(ids:$ids){... on ProductVariant{id title availableForSale inventoryQuantity inventoryPolicy image{url} inventoryItem{requiresShipping tracked} product{title status requiresSellingPlan featuredImage{url}} contextualPricing(context:{country:$country}){price{amount currencyCode}}}}}`,{ids:items.map(i=>`gid://shopify/ProductVariant/${i.variantId}`),country:input.country});
+ const data=await gql(`query Cart($ids:[ID!]!,$country:CountryCode!){marketByGeography(countryCode:$country){id status} nodes(ids:$ids){... on ProductVariant{id title availableForSale inventoryQuantity inventoryPolicy image{url} inventoryItem{requiresShipping tracked} product{id title status requiresSellingPlan featuredImage{url}} contextualPricing(context:{country:$country}){price{amount currencyCode}}}}}`,{ids:items.map(i=>`gid://shopify/ProductVariant/${i.variantId}`),country:input.country});
  if(data.marketByGeography?.status!=='ACTIVE')throw new Error('This destination is not enabled in our store. Please choose another country.');
  const lines=items.map((line,index)=>{
   const v=data.nodes[index];if(!v||v.product.status!=='ACTIVE')throw new Error('An item is no longer available. Please update your cart.');
@@ -25,7 +25,7 @@ export async function getCart(input:CartInput):Promise<Item[]>{
   if(!v.availableForSale||(v.inventoryItem.tracked&&v.inventoryPolicy==='DENY'&&v.inventoryQuantity<line.quantity))throw new Error(`${v.product.title} is unavailable in the requested quantity.`);
   const price=v.contextualPricing?.price;if(!price)throw new Error('A product is not available in this market.');
   if(!enabledCurrencies().includes(price.currencyCode))throw new Error(`Payment in ${price.currencyCode} is not enabled yet. Please use the store's regular checkout.`);
-  return {...line,title:v.product.title,variantTitle:v.title==='Default Title'?'':v.title,image:v.image?.url||v.product.featuredImage?.url||null,price,requiresShipping:v.inventoryItem.requiresShipping} as Item;
+  return {...line,productId:v.product.id,title:v.product.title,variantTitle:v.title==='Default Title'?'':v.title,image:v.image?.url||v.product.featuredImage?.url||null,price,requiresShipping:v.inventoryItem.requiresShipping} as Item;
  });
  if(new Set(lines.map(l=>l.price.currencyCode)).size!==1)throw new Error('Cart currencies do not match');
  return lines;
@@ -72,10 +72,11 @@ export async function completeDraft(s:Session){
 }
 export async function healthShopify(){return gql(`query Setup{shop{name myshopifyDomain} currentAppInstallation{accessScopes{handle}}}`);}
 export async function fulfillments(orderId:string){const data=await gql(`query Tracking($id:ID!){order(id:$id){fulfillments{status trackingInfo{number url company}}}}`,{id:orderId});return data.order?.fulfillments||[];}
-export async function registerTrackingWebhooks(){
+export async function registerTrackingWebhooks(){return registerWebhooks(['FULFILLMENTS_CREATE','FULFILLMENTS_UPDATE']);}
+export async function registerProductWebhooks(){return registerWebhooks(['PRODUCTS_CREATE','PRODUCTS_UPDATE','PRODUCTS_DELETE']);}
+async function registerWebhooks(topics:string[]){
  const uri=appUrl()+'/api/webhooks/shopify';
  if(!uri.startsWith('https://'))throw new Error('Configure your public HTTPS APP_URL first');
- const topics=['FULFILLMENTS_CREATE','FULFILLMENTS_UPDATE'];
  const existing=await gql(`query Hooks($uri:String!,$topics:[WebhookSubscriptionTopic!]!){webhookSubscriptions(first:100,uri:$uri,topics:$topics){nodes{id topic uri}}}`,{uri,topics});
  const results=[];
  for(const topic of topics){

@@ -11,6 +11,7 @@ import {createPayment,paymentQuote,whop} from '@/lib/whop';
 import {reconcile,syncPayment,syncTracking} from '@/lib/sync';
 import {placeProof,resolvePlace,suggestPlaces} from '@/lib/places';
 import {verifyWhopWebhook,WhopWebhookError} from '@/lib/whop-webhook';
+import {productSyncState,setProductSync,startProductImport,runProductSync,retryProductSync,enqueueProduct,productSyncEnabled} from '@/lib/product-sync';
 export const runtime='nodejs';
 export const maxDuration=60;
 type Context={params:Promise<{path:string[]}>};
@@ -32,11 +33,12 @@ export async function GET(req:Request,context:Context){
    const settings=requiredNames.map(name=>({name,configured:!!process.env[name]?.trim()}));
    let sessions:any[]=[],tracking:any[]=[],database=false;
    try{sessions=await db()`SELECT id,status,currency,payment_id,order_id,last_error,created_at FROM nexool_sessions ORDER BY created_at DESC LIMIT 30`;tracking=await db()`SELECT * FROM nexool_tracking WHERE error IS NOT NULL LIMIT 20`;database=true;}catch{}
-   return json({authenticated:true,settings,database,autocomplete:!!process.env.GOOGLE_PLACES_API_KEY,enabled:paymentReady(),currencies:enabledCurrencies(),sessions,tracking});
+   let productSync=null;try{productSync=await productSyncState();}catch{}
+   return json({authenticated:true,settings,database,autocomplete:!!process.env.GOOGLE_PLACES_API_KEY,enabled:paymentReady(),currencies:enabledCurrencies(),sessions,tracking,productSync,release:'0.3.0'});
   }
   if(route==='reconcile'){
    if(!equal(req.headers.get('authorization')||'',`Bearer ${required('CRON_SECRET')}`))return json({error:'Unauthorized'},401);
-   return json(await reconcile());
+   const [payments,products]=await Promise.all([reconcile(),runProductSync().catch(()=>({error:'Product sync will retry'}))]);return json({payments,products});
   }
   return json({error:'Not found'},404);
  }catch(e){return fail(e);}
@@ -59,7 +61,15 @@ export async function POST(req:Request,context:Context){
    const raw=await req.text();if(raw.length>1000000)return json({error:'Payload too large'},413);
    const expected=createHmac('sha256',required('SHOPIFY_CLIENT_SECRET')).update(raw).digest('base64');
    if(!equal(req.headers.get('x-shopify-hmac-sha256')||'',expected)||req.headers.get('x-shopify-shop-domain')!==required('SHOPIFY_SHOP_DOMAIN'))return json({error:'Invalid signature'},401);
-   const payload=JSON.parse(raw);if(!['fulfillments/create','fulfillments/update'].includes(req.headers.get('x-shopify-topic')||''))return json({received:true});
+   const payload=JSON.parse(raw);const topic=req.headers.get('x-shopify-topic')||'';
+   if(['products/create','products/update','products/delete'].includes(topic)){
+    if(!await productSyncEnabled())return json({received:true});
+    const productId=typeof payload.admin_graphql_api_id==='string'?payload.admin_graphql_api_id:`gid://shopify/Product/${payload.id}`;
+    await enqueueProduct(productId);
+    after(async()=>{try{await runProductSync(productId);}catch{console.error('Product sync queued for retry');}});
+    return json({received:true});
+   }
+   if(!['fulfillments/create','fulfillments/update'].includes(topic))return json({received:true});
    const orderId=`gid://shopify/Order/${payload.order_id}`;
    after(async()=>{const [s]=await db()`SELECT * FROM nexool_sessions WHERE order_id=${orderId}`;if(s)try{await syncTracking(s as Session);}catch{console.error('Tracking synchronization failed; reconciliation will retry');}});
    return json({received:true});
@@ -75,6 +85,10 @@ export async function POST(req:Request,context:Context){
    if(route==='admin/logout')return new Response('{}',{headers:{'Set-Cookie':'nexool_admin=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'}});
    if(route==='admin/initialize'){await initialize();return json({ok:true});}
    if(route==='admin/register-tracking'){return json(await registerTrackingWebhooks());}
+   if(route==='admin/product-sync/settings'){const data=z.object({enabled:z.boolean()}).strict().parse(await body(req));return json(await setProductSync(data.enabled));}
+   if(route==='admin/product-sync/import')return json(await startProductImport());
+   if(route==='admin/product-sync/run')return json(await runProductSync());
+   if(route==='admin/product-sync/retry')return json(await retryProductSync());
    if(route==='admin/check'){
     const checks:Record<string,unknown>={};
     try{checks.shopify=await healthShopify();}catch(e){checks.shopify={error:e instanceof Error?e.message:'Connection failed'};}
@@ -128,10 +142,10 @@ export async function POST(req:Request,context:Context){
     const draft=await createDraft({...s,cart:freshCart},s.quote.discountCode||'');
     await db()`UPDATE nexool_sessions SET draft_id=${draft.id},updated_at=NOW() WHERE id=${s.id}`;
     if(!sameMoney(draft.total,s.quote.total)||draft.currency!==s.quote.currency)throw new Error('The reserved total changed. No payment was taken. Please start a new checkout.');
-    const result=await paymentQuote({...s,draft_id:draft.id});
+    const result=await paymentQuote({...s,cart:freshCart,draft_id:draft.id});
     const expires=new Date(Math.min(new Date(s.expires_at).getTime(),new Date(result.quote.expires_at).getTime())).toISOString();
     const quote={...s.quote,paymentMinor:result.minor};
-    const [updated]=await db()`UPDATE nexool_sessions SET quote=${db().json(quote)},whop_quote_id=${result.quote.id},whop_plan=${db().json(result.plan)},status='ready',expires_at=${expires},updated_at=NOW() WHERE id=${s.id} RETURNING *`;
+    const [updated]=await db()`UPDATE nexool_sessions SET cart=${db().json(freshCart)},quote=${db().json(quote)},whop_quote_id=${result.quote.id},whop_plan=${db().json(result.plan)},status='ready',expires_at=${expires},updated_at=NOW() WHERE id=${s.id} RETURNING *`;
     return json(publicSession(updated as Session));
    }catch(e){await db()`UPDATE nexool_sessions SET status='needs_configuration',last_error='Payment preparation failed; check Shopify and Whop configuration',updated_at=NOW() WHERE id=${s.id}`;throw e;}
   }

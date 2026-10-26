@@ -36,4 +36,13 @@ suggestions. Your existing store can keep its current environment variables.
 This is reusable code deployed once per store. A shared multi-store dashboard
 and public Shopify OAuth onboarding are still separate future work.
 Internal database/event identifiers are retained for upgrade compatibility;
-they are not visible store branding. No database migration is needed.
+they are not visible store branding.
+
+OPTIONAL PRODUCT SYNC (0.3.0)
+Each store's /setup page has its own On/Off product-sync switch, stored in Neon.
+It defaults to Off and does not add an environment variable. The first switch
+change creates the product-sync tables automatically. Turn it On and import the
+catalog once if you want Shopify titles/descriptions copied to Whop.
+Mappings are scoped to the Shopify shop and Whop account. Keep WHOP_PRODUCT_ID
+and WHOP_RECEIPT_TITLE for Off mode and mixed-product carts. Read
+PRODUCT-SYNC-UPDATE.txt for permissions, name limits, retries and tax categories.

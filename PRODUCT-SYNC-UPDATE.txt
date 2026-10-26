@@ -1,0 +1,66 @@
+SECURE CHECKOUT 0.3.0 - OPTIONAL SHOPIFY TO WHOP PRODUCT SYNC
+
+Open https://checkout.nexool.shop/setup and sign in with your ADMIN_SECRET.
+Under "4. Shopify -> Whop product sync", turn the switch On, then choose
+"Import / refresh all products" once for the current Shopify catalog.
+The switch defaults to Off. No new environment variable is required.
+The first switch change creates the needed Neon tables automatically.
+
+ON
+Registers Shopify products/create, products/update and products/delete webhooks.
+Imports active products in batches and saves each Shopify ID -> Whop ID mapping.
+New or renamed products are fetched from Shopify and synced automatically.
+Repeated events and imports reuse mappings; names are not used as identities.
+Products are scoped to the Shopify shop and Whop business, including when two
+stores have identical names or use the same Whop business.
+Whop products start hidden and do not send digital-product welcome messages.
+Titles/descriptions sync; image galleries and Whop marketplace approval do not.
+Whop product titles are limited to 80 characters; payment plan titles to 30.
+The existing checkout product's tax category is inherited when it has one.
+Review categories in Whop when different Shopify products require different tax
+treatment. Existing total, tax and currency matching checks remain enforced.
+
+OFF
+Stops starting new product-sync work and stops selecting synced products for
+new checkout preparation. Checkout uses WHOP_PRODUCT_ID / WHOP_RECEIPT_TITLE.
+Products and historical orders are retained. A request already running may finish.
+Turning the switch off does not change a quote/payment already prepared.
+Turn it back on and refresh the catalog to catch edits made while it was off.
+
+CHECKOUT
+A cart containing one Shopify product (including several of its variants) uses
+that product's synced Whop ID once the mapping is ready.
+Until ready, and for mixed-product carts, the existing whole-cart Whop product
+is used, with Shopify item names, variants and quantities in the description.
+Mixed carts are not split into separate charges. Full order items remain in
+Shopify, and Whop payments retain the Shopify draft/session reference.
+Whop's newer SDK also supports cart line_items; this release retains the existing
+whole-cart payment flow for mixed carts. A separate change would be needed to
+price and validate those itemized Whop carts with Shopify discounts and shipping.
+
+BULK PROGRESS AND RETRIES
+Keep the setup page open during bulk importing. Progress is saved in Neon.
+After closing the page, use "Continue sync" to resume. Failed items show a private
+error and can be retried. The existing daily reconciliation also advances the
+queue; Shopify product webhooks process the changed product after delivery.
+An ambiguous create older than 23 hours is held for review rather than risking a
+duplicate after Whop's 24-hour idempotency window.
+
+PERMISSIONS
+Shopify needs the existing read_products permission and product-topic webhooks.
+The Whop API key must be allowed to read, create and update products.
+Credentials and webhook secrets remain in Vercel; never add them to GitHub.
+
+APPLE PAY / OLD WEBHOOK LOGS
+The domain.created event dated 2026-10-25 contains the state from creation time.
+An old payload's action_required does not describe a newly verified domain.
+Whop Websites is where to check the domain's current Apple Pay status.
+A real delivery failure is identified by its HTTP response/status, not by the
+old apple_pay.state inside a historical event. The verified company_id/account_id
+v1 compatibility handler and signature validation remain unchanged.
+
+REFERENCES
+https://docs.whop.com/api-reference/products/create-product
+https://docs.whop.com/api-reference/products/update-product
+https://docs.whop.com/developer/guides/webhooks
+https://docs.whop.com/payments/apple-pay
