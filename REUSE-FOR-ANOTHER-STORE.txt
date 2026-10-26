@@ -1,0 +1,39 @@
+SECURE CHECKOUT — REUSE FOR ANOTHER WEBSITE
+
+The checkout now uses “Secure checkout” with no store logo or fixed store name.
+The browser title, preview, confirmation page, setup page and product-image
+placeholder are neutral. Real product names and images still come from Shopify.
+
+Download/upload: Secure-checkout-vercel.zip
+For the existing Vercel project, deploy this version using your existing settings.
+The current Nexool domains shown in DEPLOYMENT.txt and .env.example are examples
+for your first store; they do not hard-code the customer-facing application.
+
+For each additional store, create a SEPARATE Vercel project and set:
+- APP_URL: that store's checkout domain, for example https://checkout.example.com
+- STOREFRONT_URL: that store's main URL, for example https://example.com
+  This controls return-to-store, policy and contact-page links, including on
+  the confirmation page. Set it before enabling live payments.
+- SHOPIFY_SHOP_DOMAIN, SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET: that store's
+  Shopify app connection, with the permissions in DEPLOYMENT.txt.
+- WHOP_BUSINESS_ID, WHOP_API_KEY, WHOP_PRODUCT_ID and WHOP_WEBHOOK_SECRET:
+  the correct Whop account/product and a webhook for that checkout domain.
+- SUPPORT_EMAIL: that store's support email (optional; otherwise the store's
+  /pages/contact link is used).
+- WHOP_RECEIPT_TITLE: the desired receipt/plan title; the default is Store order.
+- DATABASE_URL: a separate database for that deployment. Do not share a database
+  across different stores; this version does not isolate multiple stores in it.
+- ADMIN_SECRET and CRON_SECRET: new, distinct random secrets for the new project.
+- WHOP_ENABLED_CURRENCIES and optional GOOGLE_PLACES_API_KEY: configure/test for
+  that deployment; keep checkout disabled until the setup checklist passes.
+
+Point the new checkout subdomain to that Vercel project, initialize its database,
+register its Shopify tracking webhooks and configure its Whop webhook. In the
+included Shopify Liquid snippet, set checkoutUrl to that store's checkout URL.
+Read DEPLOYMENT.txt for the initial setup and ONE-PAGE-UPDATE.txt for address
+suggestions. Your existing store can keep its current environment variables.
+
+This is reusable code deployed once per store. A shared multi-store dashboard
+and public Shopify OAuth onboarding are still separate future work.
+Internal database/event identifiers are retained for upgrade compatibility;
+they are not visible store branding. No database migration is needed.

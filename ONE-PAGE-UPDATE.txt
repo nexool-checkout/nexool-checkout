@@ -1,0 +1,103 @@
+SECURE CHECKOUT — ONE-PAGE UPDATE
+25 October 2026
+
+WHAT CHANGED
+
+Contact, delivery address, shipping method and payment now share one page.
+Shipping and totals update automatically after valid delivery details are
+entered. Customers can edit the form until payment preparation begins.
+The desktop order summary stays beside the form. On phones it becomes a
+collapsible summary above the form, with the estimated/final amount visible.
+
+The design follows the video’s compact layout, light background, warm accent
+and clear order summary, with a neutral “Secure checkout” header and no store logo. No customer reviews, delivery
+promises or purchase counts have been invented. Card and wallet choices are
+provided by Whop after the delivery quote is ready; there are no pretend
+Apple Pay/Google Pay buttons. Supported bank verification may still redirect.
+
+Country address formats, field order and province lists are adapted from
+Shopify’s open-source Worldwide data (244 countries/territories). Examples:
+US state and ZIP, Canadian province and postal code, Japanese prefectures,
+UK postcode with no county requirement, UAE emirates with no mandatory ZIP.
+Names and addresses accept Unicode; a single surname/full-name field is
+sufficient when a customer does not have a separate first name.
+The interface is in English. This is not a full translation package or a
+guarantee that every country is shippable/payable. Your Shopify Markets,
+shipping settings and Whop account still determine supported destinations
+and currencies. Local tax IDs/duties and extended district validation are
+not added in this release; customers can put building/district details in
+the expanded address line, and Shopify validates the order calculation.
+
+LIVE ADDRESS SUGGESTIONS — ONE NEW OPTIONAL VARIABLE
+
+Variable: GOOGLE_PLACES_API_KEY
+
+1. Create/select a project at https://console.cloud.google.com/.
+2. Enable billing for that Google Cloud project.
+3. Enable Places API (New).
+4. Create an API key. Restrict API access to Places API (New). This key runs
+   on the server, so a website/referrer-only restriction is not appropriate.
+   If your deployment has static outbound IPs, you can also restrict by those.
+   Set API quotas and billing alerts for your expected checkout traffic.
+5. Add GOOGLE_PLACES_API_KEY under Vercel > project > Settings > Environment
+   Variables > Production. Never prefix it with NEXT_PUBLIC_. Redeploy.
+6. Test from a real cart checkout on checkout.nexool.shop. After three typed
+   characters, matching addresses appear for the selected country. Selecting
+   one fills address, city, province and postal code where Google returns them.
+   Every field remains editable. Confirm the building number, unit and district.
+
+The app uses search-session tokens, debounces typing, bounds the number of
+requests per checkout/IP, and requires an authenticated checkout session.
+The server API key is not exposed to the browser. Suggested place IDs are
+signed to the checkout, country and search session before details are fetched.
+Suggestions do not certify that an address is deliverable.
+
+Google usage may incur charges. With no key, an unavailable service, or no
+match, manual entry remains available. Coverage/accuracy varies by country.
+The /preview page intentionally makes no paid Google or payment calls.
+Nexool-address-suggestions-preview.png uses a labeled mock response to show
+the dropdown; it does not demonstrate a live Google account connection.
+
+Keep the Google Maps attribution in the suggestion list. Add the required
+Google Maps terms/privacy disclosures to your store’s published policies
+before enabling the service. Queries go to Google; do not add analytics that
+records typed address queries. Predictions are not cached in the database;
+the customer-reviewed delivery address is stored with the order.
+
+Official implementation/policy references:
+https://developers.google.com/maps/documentation/places/web-service/place-autocomplete
+https://developers.google.com/maps/documentation/places/web-service/place-details
+https://developers.google.com/maps/documentation/places/web-service/using-session-tokens
+https://developers.google.com/maps/documentation/places/web-service/policies
+https://github.com/Shopify/worldwide
+
+UPLOAD / REPLACE THE PREVIOUS VERSION
+
+Use Secure-checkout-vercel.zip. It has package.json at the ZIP root.
+For a new project, sign in at https://vercel.com/drop and upload the ZIP.
+For your EXISTING nexool-checkout project, extract it and drop the source
+folder onto that project’s dashboard to create a new deployment. Do not
+create another project unless you want another store deployment.
+Alternatively, run npx vercel@latest --prod from the extracted project folder
+and select your existing nexool-checkout project.
+
+Keep your existing Shopify/Whop/database environment variables and domain
+configuration. This update does not require a database migration or additional
+Shopify permissions beyond those in DEPLOYMENT.txt. Optional Google setup is
+separate from the Shopify app credentials. Review DEPLOYMENT.txt if this is
+your first deployment. /preview shows the new layout without taking payments.
+
+CHECK BEFORE LAUNCH
+
+Test one address for every country you sell to, manually and via suggestions.
+Confirm country switching updates fields and clears incompatible region/ZIP
+values. Confirm shipping selection changes the total, and no previous total
+can be paid after editing the address. The payment server checks the exact
+reviewed total, currency, shipping option, discount and address again before
+reserving the order; another tab cannot silently change the purchase.
+Then repeat the controlled Shopify/Whop/CJ live-order checks in DEPLOYMENT.txt.
+
+The next theme work is the add-to-cart drawer shown in the video: it slides
+in after Add to cart and contains quantities, discounts and a checkout button.
+That theme change is intentionally deferred as requested. This ZIP updates
+the checkout application; the existing Shopify cart bridge is still included.

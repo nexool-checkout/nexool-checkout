@@ -1,0 +1,73 @@
+SECURE CHECKOUT 0.2.2 - WEBHOOK AND APPLE PAY DOMAIN FIX
+
+CONFIRMED FROM YOUR PAYLOAD
+The business ID is correct. Your signed webhook is v1 without a date pin, so its
+top-level account field is company_id. The previous handler expected account_id
+and returned Wrong account before processing or acknowledging the event.
+The updated handler accepts either documented v1 field after verifying the
+signature. It still rejects missing, different and conflicting business IDs.
+Payment processing still re-fetches the payment from Whop and checks the account,
+session, quote, total, currency and refund state before completing a Shopify order.
+Signed events other than payment.succeeded are acknowledged and ignored.
+
+Apple Pay's separate reported state is action_required / apple_pay_unverified.
+Whop says the verification file could not be fetched from your checkout domain.
+This package adds Whop's officially documented Vercel rewrite for that file.
+
+DEPLOY TO YOUR EXISTING VERCEL PROJECT
+Use Secure-checkout-webhook-wallet-fix-v0.2.2.zip as application source, not as a
+Shopify theme. Keep your existing Vercel environment variables and Neon database.
+Replace/update the source in the Git repository connected to your existing
+checkout project, commit/push it, and wait for the production deployment.
+If you use direct Vercel deployments, deploy the extracted application folder to
+the SAME existing project. Redeploying the old source alone will not apply a fix.
+Do not replace your environment variables with the example placeholders.
+
+Changed application files:
+  app/api/[...path]/route.ts
+  lib/whop-webhook.ts (new)
+  vercel.json
+  tests/whop-webhook.test.ts (new)
+  package.json / package-lock.json (version 0.2.2)
+This update does not require a database migration or a Shopify theme update.
+
+VERIFY THE WEBHOOK
+Keep the endpoint at https://checkout.nexool.shop/api/webhooks/whop and its current
+signing secret in WHOP_WEBHOOK_SECRET. The business remains biz_huT0pZAGlTYetE.
+The compatibility fix accepts your current signed unpinned v1 envelope.
+For future webhooks, pin api_version_date to 2026-10-07-1 as before.
+Subscribe to payment.succeeded for this checkout. Replaying your existing signed
+domain.created event should receive HTTP 200 with {"received":true}; it will not
+create a payment or a Shopify order. Real payment events still need validation.
+If a sample payment test uses a different business ID, the handler intentionally
+rejects it. A sample event does not create a real paid order.
+
+VERIFY APPLE PAY / GOOGLE PAY DOMAIN ACCESS
+After the new Vercel deployment is Ready, open:
+https://checkout.nexool.shop/.well-known/apple-developer-merchantid-domain-association
+
+It must return the file without sign-in, an HTML error, or an authentication gate.
+The rewrite retrieves the exact public file Whop distributes for this purpose:
+https://whop.com/.well-known/apple-platform-integrator/apple-developer-merchantid-domain-association
+
+In Whop, open Websites and select checkout.nexool.shop. Choose Fix Apple Pay and
+then Check now (or the corresponding domain recheck action your dashboard shows).
+The domain has already been created: do not buy or transfer the domain.
+Wait for apple_pay.state to become ready. action_required means verification has
+not completed; inspect its issue message if it fails again.
+No Namecheap DNS changes are needed for this self-hosted Vercel approach.
+
+Whop's guide says both Apple Pay and Google Pay on your own Elements page require
+Apple Pay domain readiness. Device, account, country, currency and payment-method
+eligibility still apply after verification. Test Apple Pay on Safari on a real
+Apple device with Wallet configured; test Google Pay on a compatible browser.
+In the current checkout, payment methods load after the delivery total is quoted.
+Separate express buttons above the contact form are not added by this update.
+
+DEPLOYMENT STATUS
+This source update is prepared locally. It has not changed your live Vercel
+deployment, Whop settings, domain verification state, or any real payment.
+
+OFFICIAL REFERENCES
+https://docs.whop.com/developer/guides/webhooks
+https://docs.whop.com/payments/apple-pay

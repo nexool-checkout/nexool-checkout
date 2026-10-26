@@ -1,0 +1,311 @@
+SECURE CHECKOUT — VERCEL SETUP
+Updated 25 October 2026 — version 0.2.1
+Read ONE-PAGE-UPDATE.txt for the single-page flow and optional address autocomplete.
+
+YOUR PROJECT
+Store: https://nexool.shop
+Shopify: bfuwye-df.myshopify.com
+Checkout: https://checkout.nexool.shop
+Whop account: biz_huT0pZAGlTYetE
+
+This is a single-store pilot for one-time purchases, with a custom responsive
+checkout, server-calculated Shopify pricing, Whop payment fields, verified
+payment webhooks, Shopify draft-order completion, and optional tracking sync.
+It is source code ready to deploy and configure, NOT an already connected or
+live-tested payment service. No merchant credentials are included.
+
+QUICKEST FIRST STEP
+Sign into Vercel. On the screen you showed, use “choose a file or a folder”
+and select Secure-checkout-vercel.zip. You can also use https://vercel.com/drop.
+Use project name nexool-checkout. Vercel should detect Next.js.
+Deploy to get the project created. /preview works without any credentials;
+the main checkout remains disabled until setup is complete.
+
+If ZIP import does not detect the project, extract the ZIP and upload the
+extracted folder containing package.json. Do not upload node_modules.
+Framework: Next.js. Build: npm run build. Install: npm ci.
+Leave output-directory override unset. Node.js 22 is suitable.
+
+Vercel Drop documentation: https://vercel.com/docs/drop
+For a commercial live store use a Vercel plan permitting commercial use.
+Hobby is for personal, non-commercial use:
+https://vercel.com/docs/plans/hobby
+
+1. CONNECT THE SUBDOMAIN
+
+In your Vercel project, Settings > Domains, add checkout.nexool.shop.
+Copy the exact DNS record Vercel displays for this project.
+In Namecheap > Domain List > nexool.shop > Manage > Advanced DNS:
+  Type: CNAME Record (if this is the record Vercel requests)
+  Host: checkout
+  Value: the exact target supplied by Vercel, without https://
+  TTL: Automatic
+Replace conflicting records for ONLY the checkout host if necessary.
+Leave the root domain and www records pointing to Shopify.
+If Namecheap is not hosting your nameservers, edit the record at your actual
+DNS provider instead. Wait for Vercel to show valid configuration and HTTPS.
+https://vercel.com/docs/domains/working-with-domains/add-a-domain
+
+2. FINISH THE SHOPIFY APP
+
+Use a merchant-owned app installed on bfuwye-df.myshopify.com, with the app
+and store owned by the same Shopify organization. This pilot uses the
+client-credentials grant, not the OAuth install flow needed for other merchants.
+
+Grant these Admin API scopes:
+  read_products,read_inventory,read_markets,write_orders,write_draft_orders
+
+write_draft_orders is essential: the application asks Shopify to calculate
+shipping, discounts and taxes, reserves a draft, then completes that same
+draft after verified payment. Write scopes imply their corresponding read
+scope. Publish/release your updated app version and approve the changed
+permissions on the store installation. Set the app's webhook API version to
+2026-07. Ensure the app has the customer-data access needed for addresses,
+email and order data; a successful token alone does not establish that access.
+
+Save the app's Client ID and Client Secret privately in Vercel (step 4).
+The code refreshes its Shopify access token automatically.
+Shopify API version is pinned to 2026-07; review supported versions before
+July 2027 and update/test rather than depending on automatic fall-forward.
+
+3. PREPARE WHOP AND A DATABASE
+
+Whop:
+- Open the business dashboard for biz_huT0pZAGlTYetE.
+- Ensure the account is approved/configured for the actual physical goods
+  you sell. Create/select the product that will represent Nexool purchases;
+  copy its prod_ ID into WHOP_PRODUCT_ID.
+- Create a server API key with access to this business and the operations
+  used here: account read, payment quotes, payments create/read, and inline
+  one-time plan creation. For tracking, also allow shipments create/update.
+  Dashboard permission labels can vary; use the corresponding capabilities.
+- This version uses one Whop product for the whole cart. Shopify preserves
+  each original variant and quantity. WHOP_RECEIPT_TITLE changes the cart's
+  Whop plan title; individual Shopify-to-Whop product mapping is not included.
+- Verify buyer-added fees are disabled and tax treatment matches Shopify.
+  The application compares Whop's quoted total, currency AND tax against
+  Shopify and refuses payment if they differ. Do not remove this check to
+  force an order through. Mixed tax categories under one Whop product may
+  require further integration work and are not a supported assumption.
+- Start with USD. Enable other currencies only after confirming your Whop
+  account supports them and testing each market. This code never silently
+  converts an unsupported currency to USD.
+- Apple Pay/Google Pay availability depends on Whop, the account, eligible
+  devices/browsers and domain verification. DNS alone does not activate them.
+  Complete any domain/wallet setup Whop requires for checkout.nexool.shop
+  and verify wallets on actual supported devices before advertising them.
+
+Database:
+- Create a PostgreSQL database, for example Neon through Vercel Marketplace
+  or your Neon account. Choose a region near the Vercel application region.
+- Copy its pooled PostgreSQL connection string, including TLS/sslmode=require,
+  into DATABASE_URL. Do not use a read-only database user.
+- Persistent database storage is required: Vercel's local files are not used
+  to store orders. The /setup page will create the tables.
+
+4. ADD VERCEL ENVIRONMENT VARIABLES
+
+Project > Settings > Environment Variables. Add these for Production.
+Do not enter API secrets into Shopify Liquid, browser code or public GitHub.
+Do not add NEXT_PUBLIC_ to any credential variable.
+
+APP_URL                   https://checkout.nexool.shop
+STOREFRONT_URL             https://nexool.shop
+SHOPIFY_SHOP_DOMAIN        bfuwye-df.myshopify.com
+SHOPIFY_CLIENT_ID          your Shopify app Client ID
+SHOPIFY_CLIENT_SECRET      your Shopify app Client Secret
+WHOP_BUSINESS_ID           biz_huT0pZAGlTYetE
+WHOP_API_KEY               your private Whop API key
+WHOP_PRODUCT_ID            your selected prod_ ID
+WHOP_WEBHOOK_SECRET        the signing secret from step 6
+WHOP_ENABLED_CURRENCIES    USD
+DATABASE_URL              your pooled PostgreSQL connection string
+ADMIN_SECRET              a new random secret of at least 32 characters
+CRON_SECRET               a DIFFERENT random secret of at least 32 characters
+CHECKOUT_ENABLED          false
+PAYMENT_SETTINGS_VERIFIED false
+WHOP_RECEIPT_TITLE         Store order
+SUPPORT_EMAIL              your real customer support email
+TRACKING_SYNC_ENABLED     false
+
+Generate each random secret separately in a terminal with Node installed:
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+Store them in your password manager. ADMIN_SECRET is your /setup password.
+The full editable list is also in .env.example; do not upload a populated
+.env file. Vercel requires redeployment after environment-variable changes.
+
+Use the final custom domain for setup and checkout. If testing on a Vercel
+URL first, set APP_URL to that exact HTTPS origin and redeploy; requests
+from other origins are deliberately rejected. Change it back and redeploy
+before using checkout.nexool.shop. Do not share production credentials with
+untrusted preview deployments.
+
+5. INITIALIZE AND CHECK
+
+Redeploy, then visit https://checkout.nexool.shop/setup.
+Sign in with ADMIN_SECRET.
+Click Initialize database, then Test connections.
+Confirm Shopify returns your shop and expected scopes, Whop returns your
+business ID, and the database succeeds. Missing settings appear by name;
+their secret values are never shown.
+
+6. CONNECT WEBHOOKS
+
+Whop business developer/API settings > Webhooks:
+  URL: https://checkout.nexool.shop/api/webhooks/whop
+  Event: payment.succeeded
+  Payload/API date: 2026-10-07-1 (the code expects account_id)
+Use the current v1 event envelope compatible with this API date, not a legacy
+v2 business_id payload. Save the endpoint's signing secret exactly as given
+as WHOP_WEBHOOK_SECRET, then redeploy.
+Verify Whop can reach the production endpoint. Deployment Protection must
+not intercept customer checkout or webhook requests with a Vercel login.
+
+Shopify tracking:
+In /setup click Register Shopify tracking webhooks after APP_URL points to
+the final domain. It creates app-owned FULFILLMENTS_CREATE and
+FULFILLMENTS_UPDATE subscriptions at /api/webhooks/shopify, reusing matching
+subscriptions if already registered. Do not substitute manually-created
+Shopify admin notification webhooks with a different signing secret.
+Set TRACKING_SYNC_ENABLED=true and redeploy when ready to test tracking.
+
+Verified Whop events are persisted before acknowledgement. The application
+re-fetches the payment and checks merchant, session, quote, amount, currency
+and refund state before completing the reserved Shopify order. Daily Vercel
+cron retries pending sync; /setup also has Retry order / tracking sync.
+Cron is a backup, not a high-volume queue. At scale, replace it with a durable
+worker and monitoring. Do not rely on a single daily batch for a public SaaS.
+
+7. ADD THE SHOPIFY CART HANDOFF
+
+Test in a duplicate, unpublished theme first.
+Shopify > Online Store > Themes > duplicate your theme > Edit code.
+Create snippets/nexool-checkout.liquid and paste the supplied file from
+the shopify folder. In layout/theme.liquid, just before </body>, add:
+
+  {% render 'nexool-checkout' %}
+
+The snippet ships with const enabled = false. Keep the live theme disabled
+until the test below passes. For your private theme preview, change it to
+true after enabling payments for your controlled test.
+
+It intercepts standard cart form Checkout buttons, including the Tidal cart
+page. It saves quantity changes, reads Shopify's cart, and passes only variant
+IDs, quantities and locale to this app. Prices are re-fetched server-side.
+Shopify's selected market country starts the checkout; the shipping country
+recalculates the final prices/currency. This is not automatic IP geolocation.
+If needed, configure Shopify's market/country selector separately.
+
+Cart drawers, third-party cart widgets, and dynamic Buy Now/Shop Pay buttons
+need theme-specific integration. Until verified, use the normal full cart
+page for this checkout. Do not remove the regular checkout fallback.
+Gift cards, subscriptions, custom line properties and cart notes/attributes
+fall back to Shopify. Complex bundles and checkout extensions are not
+supported by this pilot. The original Shopify cart is not cleared after an
+external purchase; customers should not submit the same bag again.
+
+8. CONTROLLED LIVE TEST, THEN LAUNCH
+
+No live order has been placed or charged by this code's author. Browser
+preview tests do not establish provider/account compatibility.
+After checking Whop's fees/tax and credentials, set:
+  PAYMENT_SETTINGS_VERIFIED=true
+  CHECKOUT_ENABLED=true
+Redeploy. Keep the public theme bridge disabled while testing privately.
+
+Use a low-value product you own and a payment method you are authorized to
+use. This package uses production Whop endpoints; do NOT assume a test card
+or sandbox mode is supported. /preview never charges or calls the providers.
+
+Check all of these before directing customer traffic:
+- Correct product, variant and quantities; unavailable inventory is blocked.
+- Shipping-country prices/currency equal the configured Shopify market.
+- Applicable shipping rates, discounts and tax equal your intended order.
+- Whop checkout total and actual buyer charge match, without added fees.
+- Successful payment produces exactly one PAID Shopify order with original
+  variant IDs, address and email. Refresh/replay does not duplicate it.
+- Declined payment does not create a paid Shopify order.
+- Shopify order-confirmation email arrives using your store's notification
+  settings. Verify this live: draft-order notifications and custom apps may
+  differ from the Online Store channel, and Whop may also send a receipt.
+- Confirmation page links to Shopify's real order-status page.
+- Apple Pay and Google Pay work on eligible devices, if available.
+- CJ recognizes the paid Shopify order, fulfills it, and writes tracking to
+  Shopify; the webhook then creates/updates Whop shipment tracking.
+- Repeat for every currency/market you intend to enable.
+
+When this passes, enable the bridge in the published theme. To roll back,
+set its enabled constant to false and set CHECKOUT_ENABLED=false/redeploy.
+Existing payment webhooks and synchronization still run when checkout is
+disabled, so already-paid orders can finish.
+
+WHAT IS AND IS NOT INCLUDED
+
+Included: responsive, unbranded checkout UI, market-contextual product prices, address
+and delivery selection, discount input, Whop hosted payment fields, signed
+webhooks, duplicate-payment/order safeguards, private setup/status screen,
+Shopify order-status link, optional single-parcel tracking synchronization.
+
+This does not customize Shopify's hosted checkout or require Shopify Plus
+for checkout UI extensions. It is a separate checkout application creating
+Shopify orders via Admin API; it is not a Shopify-approved payment gateway.
+Platform/account eligibility and any applicable fees must be verified for
+your own store before launch.
+
+It cannot reproduce the native Shopify checkout thank-you page. Customers
+see this app's confirmation and can open Shopify's order-status page.
+No guaranteed conversion uplift is claimed; measure real funnel results.
+
+Not yet included: recurring subscriptions, multi-store OAuth/dashboard,
+public SaaS onboarding/compliance webhooks, per-product Whop mappings,
+automatic refunds/cancellations/dispute synchronization, multi-parcel Whop
+tracking, Shopify checkout extensions, gift cards, B2B, duties/import-tax
+parity, or every discount/bundle/customer-specific pricing scenario.
+No separate CJ API integration: connect CJ to Shopify, map the variants,
+fund/approve CJ fulfillment, and configure CJ to return Shopify tracking.
+Orders created by this app need to be eligible for your CJ sync settings.
+
+OPERATIONS
+
+Review /setup after launch. needs_review and payment_unknown require
+checking Whop BEFORE asking a customer to pay again. A request timeout may
+still mean a payment succeeded. Never blindly create a replacement charge.
+Complete/refund disputed or failed orders manually in both systems as needed.
+Multiple shipment numbers appear as an issue for manual Whop review.
+Tracking reconciliation covers recent orders for 55 days; webhook processing
+still supports later fulfillment events while records remain stored.
+Abandoned unpaid sessions are cleaned after seven days where safe; ambiguous
+payments and completed orders remain for reconciliation. Set a customer-data
+retention policy, restrict database access and enable backups before launch.
+Avoid analytics that record session URLs or customer addresses.
+
+DEVELOPER COMMANDS / NO-GIT ALTERNATIVE
+
+From the extracted folder containing package.json:
+  npm ci
+  npm test
+  npm run typecheck
+  npm run build
+
+Local preview: npm run dev, then http://localhost:3000/preview.
+For local credentials only, copy .env.example to .env.local (git-ignored).
+Set APP_URL=http://localhost:3000. Public webhooks still need public HTTPS.
+
+If dashboard upload is unavailable, from that same extracted folder:
+  npx vercel@latest login
+  npx vercel@latest
+Follow the prompts to create/link nexool-checkout, choose Next.js, and use ./
+as the code directory. Add the Production env variables in the dashboard,
+then deploy production with:
+  npx vercel@latest --prod
+https://vercel.com/docs/projects/deploy-from-cli
+
+Validation performed: production Next.js build, strict TypeScript check,
+sixteen unit tests covering international addresses, stale payment quotes,
+money, cart validation, signatures, reconciliation
+and mocked Shopify behavior; Chrome desktop/mobile rendering and preview
+navigation, automatic quote updates, country-dependent fields, keyboard
+address selection and manual fallback using mocked Google responses; HTTP checks for disabled payment, admin authentication, forged
+webhooks and cross-origin requests. Real PostgreSQL deployment, Shopify,
+Whop, CJ and wallet end-to-end tests require your configured accounts and
+remain part of the controlled launch checklist above.
