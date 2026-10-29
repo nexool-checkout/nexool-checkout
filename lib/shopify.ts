@@ -17,7 +17,7 @@ export async function gql<T=any>(query:string,variables:Record<string,unknown>={
 function errors(payload:any){if(payload.userErrors?.length)throw new Error(payload.userErrors.map((e:any)=>e.message).join('; '));}
 export async function getCart(input:CartInput,signal?:AbortSignal):Promise<Item[]>{
  const items=mergeItems(input.items);
- const data=await gql(`query Cart($ids:[ID!]!,$country:CountryCode!){marketByGeography(countryCode:$country){id status} nodes(ids:$ids){... on ProductVariant{id title availableForSale inventoryQuantity inventoryPolicy image{url} inventoryItem{requiresShipping tracked} product{id title status requiresSellingPlan featuredImage{url}} contextualPricing(context:{country:$country}){price{amount currencyCode}}}}}`,{ids:items.map(i=>`gid://shopify/ProductVariant/${i.variantId}`),country:input.country},signal);
+ const data=await gql(`query Cart($ids:[ID!]!,$country:CountryCode!){marketByGeography(countryCode:$country){id status} nodes(ids:$ids){... on ProductVariant{id title availableForSale inventoryQuantity inventoryPolicy image{url} inventoryItem{requiresShipping tracked} product{id handle title status requiresSellingPlan featuredImage{url}} contextualPricing(context:{country:$country}){price{amount currencyCode}}}}}`,{ids:items.map(i=>`gid://shopify/ProductVariant/${i.variantId}`),country:input.country},signal);
  if(data.marketByGeography?.status!=='ACTIVE')throw new Error('This destination is not enabled in our store. Please choose another country.');
  const lines=items.map((line,index)=>{
   const v=data.nodes[index];if(!v||v.product.status!=='ACTIVE')throw new Error('An item is no longer available. Please update your cart.');
@@ -25,7 +25,7 @@ export async function getCart(input:CartInput,signal?:AbortSignal):Promise<Item[
   if(!v.availableForSale||(v.inventoryItem.tracked&&v.inventoryPolicy==='DENY'&&v.inventoryQuantity<line.quantity))throw new Error(`${v.product.title} is unavailable in the requested quantity.`);
   const price=v.contextualPricing?.price;if(!price)throw new Error('A product is not available in this market.');
   if(!enabledCurrencies().includes(price.currencyCode))throw new Error(`Payment in ${price.currencyCode} is not enabled yet. Please use the store's regular checkout.`);
-  return {...line,productId:v.product.id,title:v.product.title,variantTitle:v.title==='Default Title'?'':v.title,image:v.image?.url||v.product.featuredImage?.url||null,price,requiresShipping:v.inventoryItem.requiresShipping} as Item;
+  return {...line,productId:v.product.id,productHandle:v.product.handle,title:v.product.title,variantTitle:v.title==='Default Title'?'':v.title,image:v.image?.url||v.product.featuredImage?.url||null,price,requiresShipping:v.inventoryItem.requiresShipping} as Item;
  });
  if(new Set(lines.map(l=>l.price.currencyCode)).size!==1)throw new Error('Cart currencies do not match');
  return lines;

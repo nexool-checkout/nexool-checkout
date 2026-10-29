@@ -1,11 +1,13 @@
 'use client';
+import {useLocale} from './LocaleProvider';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
+import {whopLocale} from '@/lib/locale';
 import {loadWhop} from '@whop/elements';
 import type {PaymentElementHandle,PaymentRequestResource,WalletAvailability} from '@whop/elements/payments';
 import {WhopElements,Payments,PaymentElement,AddressElement,BrandingElement,usePayments,useWhop} from '@whop/elements-react';
 import type {CheckoutSession} from './Checkout';
-import {addressSchema,formatMoney,type Address,type Item,type Quote} from '@/lib/model';
+import {addressSchema,type Address,type Item,type Quote} from '@/lib/model';
 import {assertWalletQuote,quoteMinor,subtotalMinor,walletDelivery,walletLocation,walletLineItems,walletShippingOptions,sameWalletDelivery,walletCancelled,walletEmail,type ExpressLocation} from '@/lib/express';
 
 type Market={cart:Item[];country:string;currency:string};
@@ -18,6 +20,9 @@ async function request(path:string,payload:unknown,token:string,timeout=55000){
  try{const response=await fetch(`/api/${path}`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(payload),signal:controller.signal});const result=await response.json();if(!response.ok)throw new Error(result.error||'Unable to confirm the order');return result;}finally{clearTimeout(timer);}
 }
 function PaymentForm(props:Props){
+ const {t,money,url}=useLocale();
+ const localizedLines=(quote:Quote)=>walletLineItems(quote).map(line=>({...line,label:t(line.label)}));
+ const localizedShipping=(quote:Quote)=>walletShippingOptions(quote).map(option=>({...option,label:t(option.label)}));
  const payments=usePayments(),whop=useWhop(),latest=useRef(props);latest.current=props;
  const [ready,setReady]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[sameBilling,setSameBilling]=useState(true),[availability,setAvailability]=useState<WalletAvailability|null>(null),[portal,setPortal]=useState<HTMLElement|null>(null);
  const paymentElement=useRef<PaymentElementHandle|null>(null),selectedCard=useRef(false),operation=useRef(false),committed=useRef(false),wallet=useRef<PaymentRequestResource|null>(null),walletCurrency=useRef('');
@@ -25,27 +30,27 @@ function PaymentForm(props:Props){
  const initialCountry=useRef(props.session.country),billingDefaults=useMemo(()=>({name:`${props.address.firstName} ${props.address.lastName}`.trim(),address:{country:props.address.countryCode}}),[sameBilling]);
  const defaults=useMemo(()=>({billingDetails:{address:{country:initialCountry.current}}}),[]);
  const filters=useMemo(()=>({applePay:availability?.applePay?'never' as const:'auto' as const,googlePay:availability?.googlePay?'never' as const:'auto' as const}),[availability?.applePay,availability?.googlePay]);
- const returnUrl=`${location.origin}/return?session=${props.token}`;
+ const returnUrl=`${location.origin}${url(`/return?session=${props.token}`)}`;
  function amountFor(p:Props){return p.session.quote&&p.session.quote.currency===p.session.currency?quoteMinor(p.session.quote):subtotalMinor(p.session.cart,p.session.currency);}
  useEffect(()=>{setPortal(document.getElementById('express-checkout'));},[]);
  useEffect(()=>{
   if(!whop)return;let active=true;const currency=props.session.currency,off:(()=>void)[]=[];setAvailability(null);
   try{
-   const current=latest.current,resource=whop.payments.paymentRequest.create({accountId:current.session.accountId,currency:currency.toLowerCase(),amount:amountFor(current),requestPayerEmail:true,requestShipping:true,...(current.quoteReady&&current.session.quote?{shippingOptions:walletShippingOptions(current.session.quote),lineItems:walletLineItems(current.session.quote)}:{})});
+   const current=latest.current,resource=whop.payments.paymentRequest.create({accountId:current.session.accountId,currency:currency.toLowerCase(),amount:amountFor(current),requestPayerEmail:true,requestShipping:true,...(current.quoteReady&&current.session.quote?{shippingOptions:localizedShipping(current.session.quote),lineItems:localizedLines(current.session.quote)}:{})});
    wallet.current=resource;walletCurrency.current=currency;
    let locationForSheet:ExpressLocation|undefined,selected=current.quoteReady?current.session.quote?.shippingHandle||'':'';
    async function preview(location:ExpressLocation){
     const p=latest.current,result:Market&{quote:Quote}=await request('express/quote',{location,discountCode:p.discountCode,shippingHandle:selected},p.token,21000);
     if(result.currency!==currency){p.onMarket(result,location);throw new Error(`Your delivery country uses ${result.currency}. Close the wallet, review that currency and try again.`);}
-    selected=result.quote.shippingHandle;return {amount:quoteMinor(result.quote),lineItems:walletLineItems(result.quote),shippingOptions:walletShippingOptions(result.quote)};
+    selected=result.quote.shippingHandle;return {amount:quoteMinor(result.quote),lineItems:localizedLines(result.quote),shippingOptions:localizedShipping(result.quote)};
    }
    off.push(resource.onShippingAddressChange(async event=>{
     try{locationForSheet=walletLocation(event.address,latest.current.address);event.updateWith(await preview(locationForSheet));}
-    catch(e){const message=explain(e);setError(message);event.updateWith({errors:[{code:'shipping_address_unserviceable',message}]});}
+    catch(e){const message=t(explain(e));setError(message);event.updateWith({errors:[{code:'shipping_address_unserviceable',message}]});}
    }));
    off.push(resource.onShippingOptionChange(async event=>{
     try{selected=event.option.id;if(!locationForSheet)throw new Error('Choose your delivery address in the wallet.');event.updateWith(await preview(locationForSheet));}
-    catch(e){const message=explain(e);setError(message);event.updateWith({errors:[{code:'shipping_option_invalid',message}]});}
+    catch(e){const message=t(explain(e));setError(message);event.updateWith({errors:[{code:'shipping_option_invalid',message}]});}
    }));
    off.push(resource.onPaymentAuthorization(async event=>{
     approval.current=null;
@@ -55,7 +60,7 @@ function PaymentForm(props:Props){
      assertWalletQuote(result.quote,currency,event.amount,event.shipping?.option?.id);
      if(event.type!=='apple_pay'&&event.type!=='google_pay')throw new Error('This wallet is not available here.');
      approval.current={session:result,amount:event.amount,currency,type:event.type};event.respondWith({approved:true});
-    }catch(e){const message=explain(e)+' Close the wallet to review your order.';setError(message);try{event.respondWith({approved:false,message});}catch{/* Expired sheets cannot authorize a token. */}}
+    }catch(e){const message=t(explain(e))+' '+t('Close the wallet to review your order.');setError(message);try{event.respondWith({approved:false,message});}catch{/* Expired sheets cannot authorize a token. */}}
    }));
    resource.canMakePayment({types:['apple_pay','google_pay']}).then(result=>{if(active)setAvailability(result);}).catch(()=>{if(active)setAvailability(null);});
   }catch{wallet.current=null;}
@@ -63,7 +68,7 @@ function PaymentForm(props:Props){
  },[whop,props.session.accountId,props.session.currency,props.token]);
  useEffect(()=>{
   if(operation.current||!wallet.current)return;
-  try{wallet.current.update({amount:amountFor(props),...(props.quoteReady&&props.session.quote?{lineItems:walletLineItems(props.session.quote),shippingOptions:walletShippingOptions(props.session.quote)}:{lineItems:[],shippingOptions:[]})});}catch{/* Open sheets own their updates. */}
+  try{wallet.current.update({amount:amountFor(props),...(props.quoteReady&&props.session.quote?{lineItems:localizedLines(props.session.quote),shippingOptions:localizedShipping(props.session.quote)}:{lineItems:[],shippingOptions:[]})});}catch{/* Open sheets own their updates. */}
  },[props.session,props.quoteReady,busy]);
  async function complete(token:string,session:CheckoutSession,approvedAmount:number,currency:string){
   if(!session.address||!session.quote)throw new Error('Complete delivery details before paying.');
@@ -104,22 +109,23 @@ function PaymentForm(props:Props){
  }
  const ordered=(availability?.order||['apple_pay','google_pay']).filter((type):type is WalletType=>(type==='apple_pay'&&!!availability?.applePay)||(type==='google_pay'&&!!availability?.googlePay));
  return <>
-  {portal&&ordered.length>0&&createPortal(<section className="express-checkout" aria-label="Express checkout"><p>Express checkout</p><div className="express-buttons">{ordered.map(type=>{
+  {portal&&ordered.length>0&&createPortal(<section className="express-checkout" aria-label={t("Express checkout")}><p>{t("Express checkout")}</p><div className="express-buttons">{ordered.map(type=>{
    const art=availability?.wallets?.[type]?.button?.light,label=type==='apple_pay'?'Apple Pay':'Google Pay';
-   return <button key={type} type="button" className="express-wallet" aria-label={`Pay with ${label}`} style={art?{backgroundColor:art.color}:undefined} disabled={busy||props.updating||committed.current} onClick={()=>startWallet(type)}>{art?<img src={art.image} alt="" aria-hidden="true"/>:<span>{label}</span>}</button>;
-  })}</div><div className="express-divider"><span>or pay below</span></div></section>,portal)}
-  <p className="muted">All transactions are encrypted. Choose your preferred payment method.</p>
+   return <button key={type} type="button" className="express-wallet" aria-label={t('Pay with {{wallet}}',{wallet:label})} style={art?{backgroundColor:art.color}:undefined} disabled={busy||props.updating||committed.current} onClick={()=>startWallet(type)}>{art?<img src={art.image} alt="" aria-hidden="true"/>:<span>{label}</span>}</button>;
+  })}</div><div className="express-divider"><span>{t("or pay below")}</span></div></section>,portal)}
+  <p className="muted">{t("All transactions are encrypted. Choose your preferred payment method.")}</p>
   <PaymentElement ref={paymentElement} order={cardOrder} fields={cardFields} defaultValues={defaults} wallets={filters} onReady={()=>{if(!selectedCard.current){selectedCard.current=true;void paymentElement.current?.select('card').catch(()=>{});}}} onChange={event=>setReady(event.complete)}/>
-  <label className="checkbox"><input type="checkbox" checked={sameBilling} disabled={busy} onChange={event=>setSameBilling(event.target.checked)}/> Billing address matches shipping</label>
+  <label className="checkbox"><input type="checkbox" checked={sameBilling} disabled={busy} onChange={event=>setSameBilling(event.target.checked)}/> {t(" Billing address matches shipping")}</label>
   {!sameBilling&&<AddressElement mode="billing" defaultValues={billingDefaults}/>}
   <BrandingElement/>
-  {error&&<div className="error" role="alert">{error}{committed.current&&<a className="quiet-link" href={returnUrl}>Check payment status →</a>}</div>}
-  <button type="button" className="button full" disabled={!ready||busy||!props.quoteReady||props.updating||committed.current} onClick={pay}>{busy?'Confirming payment…':props.quoteReady&&props.session.quote?`Pay ${formatMoney(props.session.quote.total,props.session.quote.currency)}`:props.updating?'Updating delivery total…':'Complete delivery details to pay'}<span>→</span></button>
-  <p className="fine-print">One-time purchase. Your final delivery total is confirmed before payment.</p>
+  {error&&<div className="error" role="alert">{t(error)}{committed.current&&<a className="quiet-link" href={returnUrl}>{t("Check payment status →")}</a>}</div>}
+  <button type="button" className="button full" disabled={!ready||busy||!props.quoteReady||props.updating||committed.current} onClick={pay}>{busy?t("Confirming payment…"):props.quoteReady&&props.session.quote?t('Pay {{amount}}',{amount:money(props.session.quote.total,props.session.quote.currency)}):props.updating?t("Updating delivery total…"):t("Complete delivery details to pay")}<span>→</span></button>
+  <p className="fine-print">{t("One-time purchase. Your final delivery total is confirmed before payment.")}</p>
  </>;
 }
 export default function Payment(props:Props){
+ const {t,url,locale}=useLocale();
  const [loadError,setLoadError]=useState(''),amount=props.session.quote&&props.session.quote.currency===props.session.currency?quoteMinor(props.session.quote):subtotalMinor(props.session.cart,props.session.currency);
- if(loadError)return <div className="error">{loadError}<button className="text-button" onClick={()=>location.reload()}>Reload payment</button></div>;
- return <WhopElements elements={elements} onLoadError={()=>setLoadError('Secure payment could not load. Please refresh or contact the store.')}><Payments accountId={props.session.accountId} currency={props.session.currency.toLowerCase()} amount={amount} returnUrl={`${location.origin}/return?session=${props.token}`}><PaymentForm {...props}/></Payments></WhopElements>;
+ if(loadError)return <div className="error">{t(loadError)}<button className="text-button" onClick={()=>location.reload()}>{t("Reload payment")}</button></div>;
+ return <WhopElements locale={whopLocale(locale)} elements={elements} onLoadError={()=>setLoadError('Secure payment could not load. Please refresh or contact the store.')}><Payments accountId={props.session.accountId} currency={props.session.currency.toLowerCase()} amount={amount} returnUrl={`${location.origin}${url(`/return?session=${props.token}`)}`}><PaymentForm {...props}/></Payments></WhopElements>;
 }

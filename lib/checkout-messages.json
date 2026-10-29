@@ -1,0 +1,898 @@
+[
+  {
+    "id": "55d8179fb5926c65",
+    "source": "Loading secure payment…"
+  },
+  {
+    "id": "bd0adda55a299b9e",
+    "source": "Your selected product"
+  },
+  {
+    "id": "fc3b5f2c29937171",
+    "source": "Your selected option"
+  },
+  {
+    "id": "de5aa7c10f561635",
+    "source": "Please try again"
+  },
+  {
+    "id": "6a800116dccaf089",
+    "source": "Cart is too large"
+  },
+  {
+    "id": "b3fc13ad16353ebc",
+    "source": "Unable to open checkout"
+  },
+  {
+    "id": "83a5101bbf1c491f",
+    "source": "Standard delivery · example"
+  },
+  {
+    "id": "5528814632158680",
+    "source": "Express delivery · example"
+  },
+  {
+    "id": "0eb595c6d09faa69",
+    "source": "Unable to calculate your order"
+  },
+  {
+    "id": "a528cff327cb69ec",
+    "source": "Unable to load this market."
+  },
+  {
+    "id": "16a350e32db53a9d",
+    "source": "＋ Add apartment, suite or district"
+  },
+  {
+    "id": "0059798b7f7023e4",
+    "source": "(optional)"
+  },
+  {
+    "id": "2a78025de6aae5e7",
+    "source": "Select"
+  },
+  {
+    "id": "702ef921ed1d89bf",
+    "source": "First name"
+  },
+  {
+    "id": "7b4888049459f04a",
+    "source": "Last name"
+  },
+  {
+    "id": "815fb6b7f1aef509",
+    "source": "Apartment, suite, building or district"
+  },
+  {
+    "id": "58f32426c312c937",
+    "source": "Secure checkout"
+  },
+  {
+    "id": "905ac4ef110da439",
+    "source": "One-time purchase"
+  },
+  {
+    "id": "0739063183d73697",
+    "source": "Back to your bag"
+  },
+  {
+    "id": "a0dbfa2cb0b55c07",
+    "source": "DESIGN PREVIEW · Example product and prices · No payments"
+  },
+  {
+    "id": "99e71f48c48f121b",
+    "source": "Checkout"
+  },
+  {
+    "id": "d4fc8694054d7b96",
+    "source": "Safe & secure"
+  },
+  {
+    "id": "8bfb8884ca70133d",
+    "source": "Use the store checkout →"
+  },
+  {
+    "id": "8d1de0f38ce46780",
+    "source": "Getting your bag ready…"
+  },
+  {
+    "id": "476030658579653f",
+    "source": "Your bag is waiting."
+  },
+  {
+    "id": "ee2afcdc147f58b2",
+    "source": "Checkout is being prepared."
+  },
+  {
+    "id": "5237d0b4eedb1090",
+    "source": "Add products to your bag in the store, then continue here to checkout."
+  },
+  {
+    "id": "10a859649b1a721c",
+    "source": "Return to store →"
+  },
+  {
+    "id": "cae40a0cac7470ea",
+    "source": "Preview checkout design"
+  },
+  {
+    "id": "2b5c3d26721ae9c3",
+    "source": "Contact"
+  },
+  {
+    "id": "8f489bd34a612b6d",
+    "source": "For your receipt and order updates"
+  },
+  {
+    "id": "f2488fd4ef4adbc6",
+    "source": "Email address"
+  },
+  {
+    "id": "52bfe584a5fc4505",
+    "source": "Delivery"
+  },
+  {
+    "id": "632c099e9eda2513",
+    "source": "Country / region"
+  },
+  {
+    "id": "306f1bb20677a622",
+    "source": "Phone number"
+  },
+  {
+    "id": "c199508ac43dfd01",
+    "source": "Include country code"
+  },
+  {
+    "id": "9622155ef586cd98",
+    "source": "Used only if we need to contact you about delivery."
+  },
+  {
+    "id": "ebfba2a9edd47df7",
+    "source": "Your details are reserved for this payment."
+  },
+  {
+    "id": "8c989c6a4ae3c29c",
+    "source": "Shipping method"
+  },
+  {
+    "id": "0b5260e1b4054f46",
+    "source": "Updating"
+  },
+  {
+    "id": "f411a1fb62758b4c",
+    "source": "Free"
+  },
+  {
+    "id": "d6df9bfe73baa74b",
+    "source": "No shipping required for this order."
+  },
+  {
+    "id": "bedca52a9dc5801a",
+    "source": "Finding shipping options and confirming your total…"
+  },
+  {
+    "id": "7520aed5daadfc03",
+    "source": "Enter your delivery address to see available shipping options."
+  },
+  {
+    "id": "ba484e5306a791af",
+    "source": "Try calculating delivery again"
+  },
+  {
+    "id": "7048f38b33f135df",
+    "source": "Payment"
+  },
+  {
+    "id": "ba02efb2e0763e24",
+    "source": "Secure payment · preview"
+  },
+  {
+    "id": "b6af066e567b0dc9",
+    "source": "Secure payment"
+  },
+  {
+    "id": "8fe3e52733076a07",
+    "source": "Your available cards and wallets will appear here after Whop is connected."
+  },
+  {
+    "id": "d0b475e758375b3b",
+    "source": "Your available cards and wallets will appear here once your delivery total is confirmed."
+  },
+  {
+    "id": "93985f8467340507",
+    "source": "Card details"
+  },
+  {
+    "id": "8ccc3fd43a9ee1fa",
+    "source": "Expiration date"
+  },
+  {
+    "id": "125926006a27ef0d",
+    "source": "Security code"
+  },
+  {
+    "id": "4b4edb414dd11b86",
+    "source": "Preview only — no payment"
+  },
+  {
+    "id": "e91f0387a291362a",
+    "source": "Complete delivery details above"
+  },
+  {
+    "id": "899d2d8c992815e1",
+    "source": "By placing your order, you agree to our"
+  },
+  {
+    "id": "51d2361f4faea3bc",
+    "source": "terms"
+  },
+  {
+    "id": "6201111b83a0cb5b",
+    "source": "and"
+  },
+  {
+    "id": "2b72811d5f06762f",
+    "source": "privacy policy"
+  },
+  {
+    "id": "d4c69dd8b37d3b44",
+    "source": "Refund policy"
+  },
+  {
+    "id": "dd4d740e0fea0733",
+    "source": "Shipping policy"
+  },
+  {
+    "id": "54a57c3147c49f33",
+    "source": "Privacy"
+  },
+  {
+    "id": "47aaf31b83d6bfd7",
+    "source": "Contact us"
+  },
+  {
+    "id": "ac20a57bfde0bbc4",
+    "source": "Hide"
+  },
+  {
+    "id": "0df6f1cad36c49da",
+    "source": "Show"
+  },
+  {
+    "id": "c30999dedf21f45a",
+    "source": "order summary"
+  },
+  {
+    "id": "6c200a8a390e2b61",
+    "source": "Order summary"
+  },
+  {
+    "id": "0c23fab8f6735187",
+    "source": "Your selected products will appear here."
+  },
+  {
+    "id": "af3e779f9e866675",
+    "source": "Discount code"
+  },
+  {
+    "id": "31e392d1c0378bec",
+    "source": "Apply"
+  },
+  {
+    "id": "94c7946179d3b77b",
+    "source": "The code will be checked with your delivery total."
+  },
+  {
+    "id": "b10fd337cfc9d2d9",
+    "source": "Preview only. Discounts are checked in the connected checkout."
+  },
+  {
+    "id": "8c0f2cb34079ede4",
+    "source": "Subtotal"
+  },
+  {
+    "id": "31f9b22a4ce40926",
+    "source": "· estimated"
+  },
+  {
+    "id": "70f734057414c346",
+    "source": "Discounts included"
+  },
+  {
+    "id": "ad5751430e295f0c",
+    "source": "Shipping"
+  },
+  {
+    "id": "dfe40efe921fe88e",
+    "source": "Updating…"
+  },
+  {
+    "id": "f161c69489006f72",
+    "source": "Enter delivery address"
+  },
+  {
+    "id": "4bacc5ddde6d4b31",
+    "source": "Included tax"
+  },
+  {
+    "id": "47e2886ee5d3fcab",
+    "source": "Tax"
+  },
+  {
+    "id": "626d4180aa68fc5a",
+    "source": "Calculated at checkout"
+  },
+  {
+    "id": "c9b3c38247f744e1",
+    "source": "Total"
+  },
+  {
+    "id": "8019400caf0913fa",
+    "source": "Estimated total"
+  },
+  {
+    "id": "20c6630e0184e0a8",
+    "source": "Shipping, tax and currency are confirmed for your delivery country."
+  },
+  {
+    "id": "77399bb8747e2f48",
+    "source": "Your payment details are encrypted and handled by Whop."
+  },
+  {
+    "id": "54b1ef8cdf8e64aa",
+    "source": "Delivery, kept simple"
+  },
+  {
+    "id": "1f4bf6d89c3b952d",
+    "source": "Choose from the shipping options available for your address."
+  },
+  {
+    "id": "a884ad70885819a4",
+    "source": "Here to help"
+  },
+  {
+    "id": "f9b90e42d92fd412",
+    "source": "Questions about your order?"
+  },
+  {
+    "id": "343b1115ddb81af6",
+    "source": "Contact the store."
+  },
+  {
+    "id": "6935d3438e799e0f",
+    "source": "Delivery calculation took too long. Complete delivery on this page and try again."
+  },
+  {
+    "id": "14b01e78ef63aadd",
+    "source": "Secure payment could not be completed. Please try again."
+  },
+  {
+    "id": "3254fa9d2a2dae6b",
+    "source": "Unable to confirm the order"
+  },
+  {
+    "id": "49a2bc9ad77f431c",
+    "source": "Choose your delivery address in the wallet."
+  },
+  {
+    "id": "30e9174d63fe8cac",
+    "source": "Your delivery total could not be confirmed."
+  },
+  {
+    "id": "6dae901e743ef85a",
+    "source": "This wallet is not available here."
+  },
+  {
+    "id": "c3efa9ca3a97a176",
+    "source": "Close the wallet to review your order."
+  },
+  {
+    "id": "bc42dd624f2bc555",
+    "source": "Complete delivery details before paying."
+  },
+  {
+    "id": "fbc1b01e72712bdd",
+    "source": "Check your payment status before trying again."
+  },
+  {
+    "id": "52c0eb2d449c4063",
+    "source": "Your payment currency is updating. Try again in a moment."
+  },
+  {
+    "id": "5049d8cc897d18a1",
+    "source": "Your wallet details changed. Review delivery and try again."
+  },
+  {
+    "id": "2b7e83db7424bf2d",
+    "source": "Express checkout"
+  },
+  {
+    "id": "cf113804d341a5fa",
+    "source": "or pay below"
+  },
+  {
+    "id": "1509cedf219ee3be",
+    "source": "All transactions are encrypted. Choose your preferred payment method."
+  },
+  {
+    "id": "9a85020967adac46",
+    "source": "Billing address matches shipping"
+  },
+  {
+    "id": "912451dd2fb45e40",
+    "source": "Check payment status →"
+  },
+  {
+    "id": "68f62ede29ae60f2",
+    "source": "Confirming payment…"
+  },
+  {
+    "id": "95867b397d83eb8c",
+    "source": "Updating delivery total…"
+  },
+  {
+    "id": "831fa42e97ca84d4",
+    "source": "Complete delivery details to pay"
+  },
+  {
+    "id": "656236db4d98c347",
+    "source": "One-time purchase. Your final delivery total is confirmed before payment."
+  },
+  {
+    "id": "60a4db3525e62514",
+    "source": "Reload payment"
+  },
+  {
+    "id": "e84a0cf67edda0d0",
+    "source": "Secure payment could not load. Please refresh or contact the store."
+  },
+  {
+    "id": "e846af4e0d11c40b",
+    "source": "Checkout link is missing. Please contact the store."
+  },
+  {
+    "id": "74ba6f3544e55fc2",
+    "source": "Unable to confirm your order"
+  },
+  {
+    "id": "8b05deed8fe88242",
+    "source": "YOUR ORDER"
+  },
+  {
+    "id": "f3289e1349e75c14",
+    "source": "You’re all set."
+  },
+  {
+    "id": "9597736fe04d4a0a",
+    "source": "We’re checking your order."
+  },
+  {
+    "id": "ed617d4b922e85f6",
+    "source": "Confirming the details."
+  },
+  {
+    "id": "81a6afb87d78af86",
+    "source": "Your payment is confirmed and your Shopify order is ready."
+  },
+  {
+    "id": "3f1859358143e32d",
+    "source": "Please don’t place another order yet. Contact the store so we can check the payment and finish your order."
+  },
+  {
+    "id": "8fd306463c1dc19b",
+    "source": "We’re waiting for payment confirmation and preparing your order. This page updates automatically."
+  },
+  {
+    "id": "5f24fc51d1c68e94",
+    "source": "View your order & tracking →"
+  },
+  {
+    "id": "f2fe8fb9d797be12",
+    "source": "This page verifies the server’s order record. A return from the payment provider alone does not confirm a purchase."
+  },
+  {
+    "id": "5814cbc7292ed9e7",
+    "source": "Contact the store"
+  },
+  {
+    "id": "c7cab3358e80dbfc",
+    "source": "Suggestions unavailable. You can enter your address manually."
+  },
+  {
+    "id": "2448120d8ca3831f",
+    "source": "No matches. You can enter your address manually."
+  },
+  {
+    "id": "b67df2a832ea2fb6",
+    "source": "Enter your address manually."
+  },
+  {
+    "id": "a3d9465c906b69f7",
+    "source": "We could not fill that address. Please enter it manually."
+  },
+  {
+    "id": "a66005a036905e8a",
+    "source": "Address filled. Check the building number and add any apartment or district."
+  },
+  {
+    "id": "56ef8f20955f2564",
+    "source": "Address"
+  },
+  {
+    "id": "c23392cd19ee393d",
+    "source": "Start typing your street address"
+  },
+  {
+    "id": "da21c904aaa989d4",
+    "source": "Street address and house number"
+  },
+  {
+    "id": "15bc7b3c1a7756d8",
+    "source": "Enter the rest of your address below."
+  },
+  {
+    "id": "1534f8f4953d0a97",
+    "source": "Enter address manually"
+  },
+  {
+    "id": "2923740fe800e250",
+    "source": "Google Maps"
+  },
+  {
+    "id": "dbebda550bfb1d59",
+    "source": "Delivery details"
+  },
+  {
+    "id": "ecdfa742853c56a2",
+    "source": "Suggested addresses"
+  },
+  {
+    "id": "4a6924999c1fba0f",
+    "source": "Select {{region}}"
+  },
+  {
+    "id": "aaea3e4983febf57",
+    "source": "Pay {{amount}}"
+  },
+  {
+    "id": "b2ca927cedd4c94c",
+    "source": "Pay with {{wallet}}"
+  },
+  {
+    "id": "de882e385533624e",
+    "source": "You’ll be charged in {{currency}}."
+  },
+  {
+    "id": "aac45b4b0058d7c3",
+    "source": "Show order summary"
+  },
+  {
+    "id": "58255c0f817f1c6c",
+    "source": "Hide order summary"
+  },
+  {
+    "id": "90129ae7f59b6785",
+    "source": "Items: {{count}}"
+  },
+  {
+    "id": "ef6691545d2c5523",
+    "source": "Standard"
+  },
+  {
+    "id": "aa36ce0239340efa",
+    "source": "Standard shipping"
+  },
+  {
+    "id": "4e1dde44558b8de1",
+    "source": "Standard delivery"
+  },
+  {
+    "id": "572a14164bde322a",
+    "source": "Express"
+  },
+  {
+    "id": "1351d3e8e9b0b035",
+    "source": "Express shipping"
+  },
+  {
+    "id": "2e7b142546caeebe",
+    "source": "Express delivery"
+  },
+  {
+    "id": "c1d078d516dd7c8b",
+    "source": "Economy"
+  },
+  {
+    "id": "09732ba04ceff213",
+    "source": "Economy shipping"
+  },
+  {
+    "id": "ae53cea8228bcfc3",
+    "source": "Postal code"
+  },
+  {
+    "id": "06a990e3ec7e07db",
+    "source": "State / province"
+  },
+  {
+    "id": "fc33f73246f48295",
+    "source": "City"
+  },
+  {
+    "id": "4309cddf046bf04c",
+    "source": "Emirate"
+  },
+  {
+    "id": "abfcecfabeb7545e",
+    "source": "Province"
+  },
+  {
+    "id": "0a4387d25c62e78b",
+    "source": "Postcode"
+  },
+  {
+    "id": "aed428e623433b85",
+    "source": "State/territory"
+  },
+  {
+    "id": "9e843db53797cbcd",
+    "source": "Suburb"
+  },
+  {
+    "id": "a3b50c476732c740",
+    "source": "State"
+  },
+  {
+    "id": "5741232b5affa4f7",
+    "source": "Governorate"
+  },
+  {
+    "id": "50f1878d24fe66e5",
+    "source": "District"
+  },
+  {
+    "id": "136c87dec4695cef",
+    "source": "County"
+  },
+  {
+    "id": "63701dfdc6938693",
+    "source": "PIN code"
+  },
+  {
+    "id": "505719aef9b4b8d4",
+    "source": "Prefecture"
+  },
+  {
+    "id": "5caed874199b19bf",
+    "source": "City/ward/town/village"
+  },
+  {
+    "id": "b311172dd9a45edf",
+    "source": "Ward"
+  },
+  {
+    "id": "024dc204d7ba77a8",
+    "source": "Area"
+  },
+  {
+    "id": "2e4d0c8129e9a321",
+    "source": "City/town"
+  },
+  {
+    "id": "5304ab98e5815a35",
+    "source": "Department"
+  },
+  {
+    "id": "95c87fe32d58da52",
+    "source": "ZIP code"
+  },
+  {
+    "id": "c2656c68b740c2a9",
+    "source": "· Google Maps"
+  },
+  {
+    "id": "2b1378494f9d96ca",
+    "source": "Your order details changed. Refresh and review the total before paying."
+  },
+  {
+    "id": "88574604f552512e",
+    "source": "Invalid money"
+  },
+  {
+    "id": "c0cdf2426a2a7988",
+    "source": "Unsupported currency precision"
+  },
+  {
+    "id": "d77353b3d019c9a2",
+    "source": "Amount too large"
+  },
+  {
+    "id": "3b880095a4143fdf",
+    "source": "Shopify connection failed. Check app installation and credentials in setup."
+  },
+  {
+    "id": "7d97652411942c21",
+    "source": "Shopify did not return an access token"
+  },
+  {
+    "id": "452d89e7e1cbf78c",
+    "source": "Shopify API: "
+  },
+  {
+    "id": "c423d2fe1abd8741",
+    "source": "This destination is not enabled in our store. Please choose another country."
+  },
+  {
+    "id": "a617c9cf61c651eb",
+    "source": "An item is no longer available. Please update your cart."
+  },
+  {
+    "id": "01917cd907262ca4",
+    "source": "Subscription items are not supported in this checkout yet."
+  },
+  {
+    "id": "7d82c74e900db431",
+    "source": "A product is not available in this market."
+  },
+  {
+    "id": "ef4f3596175f31f7",
+    "source": "Cart currencies do not match"
+  },
+  {
+    "id": "fea326d5ad443c5d",
+    "source": "No shipping option is available for this address. Please check it or contact the store."
+  },
+  {
+    "id": "99d53eb7a52ddfe1",
+    "source": "Shopify returned a different currency. Please review your destination."
+  },
+  {
+    "id": "f96273d24d7fb2ec",
+    "source": "Calculate your delivery and total first"
+  },
+  {
+    "id": "a2a34fe02f935e33",
+    "source": "Unable to reserve your order"
+  },
+  {
+    "id": "6c6d196a7e069cd4",
+    "source": "Reserved order was not found"
+  },
+  {
+    "id": "f13ca931cd883a7f",
+    "source": "The reserved order changed after payment. Manual review required."
+  },
+  {
+    "id": "fdc2dfea03b0a880",
+    "source": "Shopify is still preparing this order. Retry synchronization."
+  },
+  {
+    "id": "20f3ff0cfaad4a84",
+    "source": "Order completion is still pending"
+  },
+  {
+    "id": "cc4d3c62e9377a7a",
+    "source": "Add read_fulfillments to your Shopify app, release the version and approve the new permission on the store. Then register tracking webhooks again."
+  },
+  {
+    "id": "aa455f2e752e79d8",
+    "source": "Configure your public HTTPS APP_URL first"
+  },
+  {
+    "id": "a9258d4bcd94d8fc",
+    "source": "Order amount is too large"
+  },
+  {
+    "id": "2917b9986f45ca47",
+    "source": "Choose a valid delivery country in your wallet."
+  },
+  {
+    "id": "06339cb806b01a21",
+    "source": "Your wallet did not provide a complete delivery address. Complete delivery on this page and try again."
+  },
+  {
+    "id": "074d4cc50bb493db",
+    "source": "Your wallet did not provide complete contact and delivery details. Complete the form on this page and try again."
+  },
+  {
+    "id": "a1bb92e8e47871ab",
+    "source": "Your final delivery total changed. Review the updated total before paying again."
+  },
+  {
+    "id": "9b5b7bfa8eefa4af",
+    "source": "Your shipping options changed. Review delivery and try again."
+  },
+  {
+    "id": "2b3b67021c839c0b",
+    "source": "Checkout is not taking payments yet. Please use the store checkout."
+  },
+  {
+    "id": "ccd2ac9a639302a6",
+    "source": "Product sync will retry"
+  },
+  {
+    "id": "e3ebaa16dd9d9b9f",
+    "source": "Not found"
+  },
+  {
+    "id": "c3123ec25291b935",
+    "source": "Payload too large"
+  },
+  {
+    "id": "97b096319f1c128b",
+    "source": "Invalid signature"
+  },
+  {
+    "id": "8470b2500f120986",
+    "source": "ADMIN_SECRET must have at least 32 characters"
+  },
+  {
+    "id": "2c1d9a48635d84a3",
+    "source": "Incorrect setup password"
+  },
+  {
+    "id": "47ab8955ce86d41d",
+    "source": "Check Whop key, account ID and account read permission"
+  },
+  {
+    "id": "60f2389fdcb4d847",
+    "source": "Check DATABASE_URL"
+  },
+  {
+    "id": "6486431d639c693c",
+    "source": "Address suggestions are unavailable. Enter your address manually."
+  },
+  {
+    "id": "892e7c672444f1c4",
+    "source": "Please select a fresh address suggestion."
+  },
+  {
+    "id": "c7febe53dc044892",
+    "source": "This order is already reserved. Start a new checkout to change delivery."
+  },
+  {
+    "id": "d0cfad89fa1fa6de",
+    "source": "This order is already reserved. Return to the store to start a different order."
+  },
+  {
+    "id": "fa4ca5adf109d8e6",
+    "source": "An update is already in progress. Please wait."
+  },
+  {
+    "id": "aadd870838ff6ee4",
+    "source": "Confirm your delivery details first"
+  },
+  {
+    "id": "6c04911b4ce8668b",
+    "source": "Your order changed or payment preparation is already in progress. Refresh to check the latest order."
+  },
+  {
+    "id": "2fce6dd02aa33b0c",
+    "source": "The total changed. Please return to the store and review a new checkout."
+  },
+  {
+    "id": "336e72741b8ae722",
+    "source": "The reserved total changed. No payment was taken. Please start a new checkout."
+  },
+  {
+    "id": "ebf6a4c1d720e4a8",
+    "source": "Your payment is already being checked. Please wait and do not submit another order."
+  },
+  {
+    "id": "f052044274ba4fcd",
+    "source": "We could not confirm the payment result. Please check your order status before trying again."
+  },
+  {
+    "id": "fb8e7a1a3cb7b25d",
+    "source": "Items"
+  },
+  {
+    "id": "51bfcbca9c675239",
+    "source": "Order total"
+  },
+  {
+    "id": "e69b2b465e23cf07",
+    "source": "By placing your order, you agree to our {{terms}} and {{privacy}}."
+  }
+]
