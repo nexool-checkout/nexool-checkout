@@ -2,12 +2,14 @@
 import {storefrontForLocale} from '@/lib/locale';
 import {useLocale} from './LocaleProvider';
 import {useEffect,useState} from 'react';
+import {checkoutToken,rememberCheckoutToken} from '@/lib/browser-session';
+import {trackCheckoutEvent} from '@/lib/meta-pixel';
 export default function ReturnStatus({storefront,supportEmail}:{storefront:string;supportEmail:string}){
  const {t,url:localUrl,locale}=useLocale();
  const storeUrl=storefrontForLocale(storefront,locale);
  const [status,setStatus]=useState('checking'),[url,setUrl]=useState(''),[error,setError]=useState(''),[timedOut,setTimedOut]=useState(false);
- useEffect(()=>{const params=new URLSearchParams(location.search);const token=params.get('session');history.replaceState({},'',localUrl(`/return?session=${token||''}`));if(!token){setError('Checkout link is missing. Please contact the store.');return;}
-  let done=false,count=0;const check=async()=>{try{const response=await fetch('/api/session',{headers:{Authorization:`Bearer ${token}`}});const s=await response.json();if(!response.ok)throw new Error(s.error);if(done)return;setStatus(s.status);if(s.orderUrl){setUrl(s.orderUrl);done=true;}}catch(e){if(!done)setError(e instanceof Error?e.message:'Unable to confirm your order');}finally{if(++count>=45&&!done){done=true;setTimedOut(true);}}};
+ useEffect(()=>{const token=checkoutToken();if(!token){setError('Checkout link is missing. Please contact the store.');return;}rememberCheckoutToken(token,localUrl('/return'));
+  let done=false,count=0;const check=async()=>{try{const response=await fetch('/api/session',{headers:{Authorization:`Bearer ${token}`}});const s=await response.json();if(!response.ok)throw new Error(s.error);if(done)return;setStatus(s.status);if(s.orderUrl){setUrl(s.orderUrl);done=true;void trackCheckoutEvent(s.tracking,'Purchase');}}catch(e){if(!done)setError(e instanceof Error?e.message:'Unable to confirm your order');}finally{if(++count>=45&&!done){done=true;setTimedOut(true);}}};
   check();const timer=setInterval(()=>{if(!done)check();},4000);return()=>{done=true;clearInterval(timer);};
  },[]);
  const review=timedOut||['needs_review','payment_unknown','needs_configuration'].includes(status);

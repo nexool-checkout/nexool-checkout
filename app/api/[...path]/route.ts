@@ -2,7 +2,8 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import {after} from 'next/server';
 import {z} from 'zod';
 import {createHmac} from 'node:crypto';
-import {db,initialize,limit} from '@/lib/db';
+import {db,initialize,limit,ensureAttributionSchema} from '@/lib/db';
+import {checkoutTracking} from '@/lib/checkout-tracking';
 import {required,requiredNames,paymentReady,appUrl,enabledCurrencies} from '@/lib/config';
 import {adminCookie,body,equal,fail,hash,isAdmin,requireAdmin,requireFresh,sameOrigin,sessionFor,tokenFrom} from '@/lib/security';
 import {addressSchema,cartSchema,mergeItems,sameMoney,preparationSchema,assertReviewedOrder,type Session} from '@/lib/model';
@@ -17,7 +18,7 @@ export const runtime='nodejs';
 export const maxDuration=60;
 type Context={params:Promise<{path:string[]}>};
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
-function publicSession(s:Session){return {id:s.id,cart:s.cart,country:s.country,currency:s.currency,address:s.address,quote:s.quote,status:s.status,orderUrl:s.order_url,expiresAt:s.expires_at,accountId:process.env.WHOP_BUSINESS_ID};}
+function publicSession(s:Session){return {id:s.id,cart:s.cart,country:s.country,currency:s.currency,address:s.address,quote:s.quote,status:s.status,orderUrl:s.order_url,expiresAt:s.expires_at,accountId:process.env.WHOP_BUSINESS_ID,tracking:checkoutTracking(s)};}
 function assertEnabled(){if(!paymentReady())throw new Error('Checkout is not taking payments yet. Please use the store checkout.');}
 function rateKey(req:Request,prefix:string){return `${prefix}:${hash(req.headers.get('x-vercel-forwarded-for')||req.headers.get('x-forwarded-for')||'local').slice(0,24)}`;}
 async function safeSync(id:string){try{await syncPayment(id);await db()`UPDATE nexool_events SET processed_at=NOW() WHERE payment_id=${id}`;}catch{console.error('Payment synchronization needs review');}}
@@ -104,8 +105,9 @@ export async function POST(req:Request,context:Context){
   if(route==='session'){
    await limit(rateKey(req,'sessions'),10);
    const input=cartSchema.parse(await body(req));const items=mergeItems(input.items);const cart=await getCart({...input,items});
+   await ensureAttributionSchema();
    const id=randomUUID(),token=randomBytes(32).toString('hex'),expires=new Date(Date.now()+30*60_000).toISOString();
-   const [s]=await db()`INSERT INTO nexool_sessions(id,token_hash,items,country,currency,cart,expires_at) VALUES(${id},${hash(token)},${db().json(items)},${input.country},${cart[0].price.currencyCode},${db().json(cart)},${expires}) RETURNING *`;
+   const [s]=await db()`INSERT INTO nexool_sessions(id,token_hash,items,country,currency,cart,expires_at,attribution) VALUES(${id},${hash(token)},${db().json(items)},${input.country},${cart[0].price.currencyCode},${db().json(cart)},${expires},${db().json(input.attribution||{})}) RETURNING *`;
    return json({token,...publicSession(s as Session)});
   }
   const s=await sessionFor(req);requireFresh(s);

@@ -1,4 +1,5 @@
 import {required,shopDomain,enabledCurrencies,appUrl} from './config';
+import {orderAttribution} from './checkout-tracking';
 import {mergeItems,sameMoney,type Address,type CartInput,type Item,type Quote,type Rate,type Session} from './model';
 let cached:{value:string;until:number}|undefined;
 export const API_VERSION='2026-07';
@@ -57,7 +58,7 @@ export async function calculate(cart:Item[],address:ShippingLocation,discountCod
 }
 export async function createDraft(s:Session,discountCode:string){
  if(!s.address||!s.quote)throw new Error('Calculate your delivery and total first');
- const input={...draftInput(s.cart,s.address,discountCode,s.quote.shippingHandle),reserveInventoryUntil:s.expires_at,note:`Whop checkout session ${s.id}`,customAttributes:[{key:'nexool_session',value:s.id}]};
+ const input={...draftInput(s.cart,s.address,discountCode,s.quote.shippingHandle),reserveInventoryUntil:s.expires_at,note:`Whop checkout session ${s.id}`,customAttributes:orderAttribution(s.id,s.attribution)};
  const data=await gql(`mutation CreateDraft($input:DraftOrderInput!){draftOrderCreate(input:$input){draftOrder{id ready ${totals}} userErrors{message}}}`,{input});errors(data.draftOrderCreate);
  const draft=data.draftOrderCreate.draftOrder;if(!draft)throw new Error('Unable to reserve your order');
  return {id:draft.id,total:draft.totalPriceSet.presentmentMoney.amount,currency:draft.presentmentCurrencyCode};

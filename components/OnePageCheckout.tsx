@@ -11,6 +11,8 @@ import {addressRows,addressRules} from '@/lib/address-rules';
 import countries from '@/lib/countries.json';
 import {Bag,Lock,type CheckoutSession} from './Checkout';
 import AddressAutocomplete from './AddressAutocomplete';
+import {checkoutToken,rememberCheckoutToken} from '@/lib/browser-session';
+import {trackCheckoutEvent} from '@/lib/meta-pixel';
 const Payment=dynamic(()=>import('./Payment'),{ssr:false,loading:()=> <p className="muted"><LocalizedText>Loading secure payment…</LocalizedText></p>});
 const initialAddress:Address={email:'',firstName:'',lastName:'',address1:'',address2:'',city:'',provinceCode:'',zip:'',countryCode:'US',phone:''};
 const demo:CheckoutSession={id:'preview',cart:[{variantId:'1',quantity:1,title:'Your selected product',variantTitle:'Your selected option',image:null,price:{amount:'39.00',currencyCode:'USD'},requiresShipping:true}],country:'US',currency:'USD',address:null,quote:null,status:'cart',orderUrl:null,expiresAt:'2099-01-01T00:00:00Z',accountId:''};
@@ -37,17 +39,20 @@ export default function OnePageCheckout({storefront,supportEmail,enabled,preview
  useEffect(()=>{
   mounted.current=true;if(preview)return()=>{mounted.current=false;};let active=true;
   (async()=>{try{
-   const stored=new URLSearchParams(location.search).get('session');
+   const stored=checkoutToken();
    if(stored){
     const result:CheckoutSession=await api('session',undefined,stored);if(!active)return;
-    setToken(stored);setSession(result);
+    setToken(stored);setSession(result);rememberCheckoutToken(stored,url('/'));
+    if(!['complete','paying','payment_pending','payment_unknown','syncing','needs_review'].includes(result.status))void trackCheckoutEvent(result.tracking,'InitiateCheckout');
     if(result.address){setAddress(result.address);setShowApartment(!!result.address.address2);}
     if(result.quote&&result.address){const d=result.quote.discountCode||'',h=result.quote.shippingHandle;setDiscount(d);setAppliedDiscount(d);setShippingHandle(h);setQuoteKey(fingerprint(result.address,d,h));}
     if(['paying','payment_pending','payment_unknown','complete','syncing','needs_review'].includes(result.status))location.replace(url(`/return?session=${stored}`));
    }else if(location.hash.startsWith('#cart=')){
     const raw=location.hash.slice(6);if(raw.length>16000)throw new Error('Cart is too large');
     const result=await api('session',JSON.parse(decodeURIComponent(raw)));if(!active)return;
-    setToken(result.token);setSession(result);setAddress(a=>({...a,countryCode:result.country}));history.replaceState({},'',url(`/?session=${result.token}`));
+    setToken(result.token);setSession(result);setAddress(a=>({...a,countryCode:result.country}));
+    if(!rememberCheckoutToken(result.token,url('/')))history.replaceState({},'',url(`/?session=${result.token}`));
+    void trackCheckoutEvent(result.tracking,'InitiateCheckout');
    }
   }catch(e){if(active)setError(e instanceof Error?e.message:'Unable to open checkout');}finally{if(active)setLoading(false);}})();
   return()=>{active=false;mounted.current=false;};

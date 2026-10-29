@@ -2,6 +2,11 @@ import postgres from 'postgres';
 import {required} from './config';
 let connection:ReturnType<typeof postgres>|undefined;
 export function db(){return connection??=postgres(required('DATABASE_URL'),{max:3,idle_timeout:20,connect_timeout:10,prepare:false,ssl:process.env.NODE_ENV==='production'?'require':undefined});}
+let attributionSchema:Promise<void>|undefined;
+export function ensureAttributionSchema(){
+ // Additive and compatible with sessions created by the previous deployment.
+ return attributionSchema??=db()`ALTER TABLE nexool_sessions ADD COLUMN IF NOT EXISTS attribution JSONB`.then(()=>{}).catch(error=>{attributionSchema=undefined;throw error;});
+}
 export async function initialize(){
  const sql=db();
  await sql`CREATE TABLE IF NOT EXISTS nexool_sessions (
@@ -13,6 +18,7 @@ export async function initialize(){
  await sql`ALTER TABLE nexool_events ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ`;
  await sql`CREATE TABLE IF NOT EXISTS nexool_limits (key TEXT PRIMARY KEY, count INTEGER NOT NULL, resets_at TIMESTAMPTZ NOT NULL)`;
  await sql`CREATE TABLE IF NOT EXISTS nexool_tracking (order_id TEXT PRIMARY KEY, tracking_number TEXT, synced_at TIMESTAMPTZ, error TEXT)`;
+ await ensureAttributionSchema();
 }
 export async function limit(key:string,max:number,seconds=60){
  const [row]=await db()`INSERT INTO nexool_limits (key,count,resets_at) VALUES (${key},1,NOW()+${seconds}*INTERVAL '1 second')
